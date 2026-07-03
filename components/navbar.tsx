@@ -38,6 +38,11 @@ export function Navbar() {
       >
         <Link
           href="/"
+          onClick={() => {
+            if (isHome) window.scrollTo({ top: 0, behavior: 'smooth' })
+            setMobileOpen(false)
+          }}
+          aria-label="Wastra.ai — kembali ke beranda"
           className={`font-serif text-xl font-bold tracking-tight ${
             solid ? 'text-foreground' : 'text-[#FBF1C7]'
           }`}
