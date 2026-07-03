@@ -18,7 +18,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const [imageSrc, setImageSrc] = useState<string | null>(null)
   const [flashOn, setFlashOn] = useState(false)
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
-  const [isFullscreen, setIsFullscreen] = useState(false)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -106,18 +105,14 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
-      
+    <div className="mx-auto w-full h-full">
       {(state === 'camera_active' || state === 'analyzing' || state === 'done_live') && !imageSrc && (
-        <div className="relative flex flex-col items-center gap-4">
-          <div className={`${isFullscreen ? 'fixed inset-0 z-30 rounded-none border-none aspect-auto' : 'relative overflow-hidden rounded-3xl border-2 border-border shadow-lg w-full h-[55vh] md:h-auto md:aspect-video'} bg-black flex items-center justify-center group transition-all duration-500`}>
+        <div className="relative w-full h-full">
+          <div className="relative w-full h-full bg-black flex items-center justify-center group overflow-hidden">
             
             {/* Camera Controls */}
             {(state === 'camera_active' || state === 'analyzing') && (
-              <div className={`absolute ${isFullscreen ? 'top-20 md:top-24 right-4 md:right-8' : 'top-4 right-4'} z-20 flex flex-col gap-3 transition-all duration-500`}>
-                <button onClick={() => setIsFullscreen(!isFullscreen)} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg">
-                  {isFullscreen ? <Minimize className="h-5 w-5 text-white" /> : <Maximize className="h-5 w-5 text-white" />}
-                </button>
+              <div className="absolute top-24 right-4 md:right-8 z-20 flex flex-col gap-3">
                 <button onClick={toggleFlash} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg">
                   {flashOn ? <Zap className="h-5 w-5 fill-yellow-400 text-yellow-400" /> : <ZapOff className="h-5 w-5 text-white" />}
                 </button>
@@ -139,7 +134,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
             {/* Scanning overlay animation */}
             {(state === 'camera_active' || state === 'analyzing') && (
               <div className="absolute inset-0 pointer-events-none">
-                <div className="w-full h-full border-4 border-teal/40 rounded-3xl" />
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-teal/0 via-teal/20 to-teal/0 animate-[scan_3s_ease-in-out_infinite]" />
                 <Scan className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-24 text-teal/50 animate-pulse" />
               </div>
@@ -148,10 +142,10 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
             {/* Live Bounding Boxes (Auto Detect) */}
             {state === 'done_live' && (
               <div className="absolute inset-0 pointer-events-none">
-                {detections.map((d) => (
+                {detections.map((d, i) => (
                   <div
-                    key={d.label}
-                    className="absolute rounded-md border-[3px] border-teal bg-teal/10 shadow-[0_0_15px_rgba(69,133,136,0.5)] transition-all duration-300"
+                    key={i}
+                    className="absolute border-2 border-teal transition-all duration-300 pointer-events-none"
                     style={{
                       left: `${d.x}%`,
                       top: `${d.y}%`,
@@ -159,9 +153,13 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
                       height: `${d.h}%`,
                     }}
                   >
-                    <span className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full rounded-md bg-teal px-3 py-1 text-sm font-bold text-accent-foreground shadow-lg whitespace-nowrap">
+                    <button
+                      onClick={captureAndShowDetails}
+                      className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full rounded-md bg-teal hover:bg-teal/80 px-3 py-1.5 text-sm font-bold text-accent-foreground shadow-lg whitespace-nowrap pointer-events-auto transition-transform active:scale-95 cursor-pointer flex items-center gap-2"
+                    >
                       {d.label}
-                    </span>
+                      <span className="text-[10px] bg-black/20 px-1.5 py-0.5 rounded-full">Klik Detail</span>
+                    </button>
                   </div>
                 ))}
               </div>
@@ -170,27 +168,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
             {/* Hidden canvas for capturing frame */}
             <canvas ref={canvasRef} className="hidden" />
 
-            {state === 'done_live' && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
-                <button
-                  onClick={captureAndShowDetails}
-                  className="flex items-center gap-2 rounded-full bg-teal px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-teal/90 transition-transform active:scale-95 cursor-pointer pointer-events-auto"
-                >
-                  <Camera className="h-5 w-5" />
-                  Lihat Detail Motif
-                </button>
-              </div>
-            )}
           </div>
-          
-          <p className="text-sm font-medium text-foreground">
-            {state === 'camera_active' && 'Sedang menyorot kain...'}
-            {state === 'analyzing' && 'Menganalisis pola...'}
-            {state === 'done_live' && 'Motif terdeteksi secara langsung (Live)!'}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            <button onClick={handleFallback} className="underline underline-offset-2 hover:text-foreground">Tutup kamera & unggah foto manual</button>
-          </p>
         </div>
       )}
 

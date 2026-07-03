@@ -85,7 +85,7 @@ export function UnifiedAiWorkspace({
     <div className="relative flex h-full w-full flex-col items-center pt-24 pb-12">
       {/* Floating Popup (Toast) */}
       {showPopup && (
-        <div className="fixed top-6 left-1/2 z-50 w-[90%] max-w-md -translate-x-1/2 rounded-2xl border border-border bg-card/95 p-4 shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="fixed top-24 left-1/2 z-50 w-[90%] max-w-sm -translate-x-1/2 md:top-auto md:bottom-6 md:left-auto md:right-6 md:translate-x-0 rounded-2xl border border-border bg-card/95 p-4 shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-top-4 md:slide-in-from-bottom-4 duration-500">
           <button
             onClick={() => setShowPopup(false)}
             className="absolute right-3 top-3 rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
@@ -109,9 +109,17 @@ export function UnifiedAiWorkspace({
 
 
       {/* Main Content Area */}
-      <div className="flex w-full max-w-4xl flex-1 flex-col items-center justify-start overflow-y-auto px-5 pb-6 pt-10 no-scrollbar">
+      <div className={`flex w-full flex-1 flex-col items-center justify-start no-scrollbar ${
+        activeModel === 'multi-motif' 
+          ? 'max-w-none p-0 relative overflow-hidden' 
+          : 'max-w-4xl overflow-y-auto px-5 pb-6 pt-10'
+      }`}>
         {/* Central Greeting (Visible mostly when idle or generating) */}
-        <h1 className={`relative z-40 mb-4 md:mb-10 text-center font-serif text-2xl md:text-3xl font-bold text-foreground lg:text-5xl pointer-events-none ${activeModel === 'multi-motif' ? 'hidden md:block' : ''}`}>
+        <h1 className={`relative z-40 text-center font-serif text-2xl md:text-3xl font-bold lg:text-5xl pointer-events-none transition-all duration-500 ${
+          activeModel === 'multi-motif' 
+            ? 'hidden' 
+            : 'mb-4 md:mb-10 text-foreground'
+        }`}>
           {activeModel === 'wastra-studio'
             ? 'Ada ide motif batik baru untuk dieksplorasi?'
             : activeModel === 'multi-motif'
@@ -120,7 +128,9 @@ export function UnifiedAiWorkspace({
         </h1>
 
         {/* Dynamic Model View */}
-        <div className="w-full animate-in fade-in zoom-in-95 duration-300">
+        <div className={`w-full animate-in fade-in zoom-in-95 duration-300 ${
+          activeModel === 'multi-motif' ? 'absolute inset-0' : ''
+        }`}>
           {activeModel === 'scan-cepat' && <ScanCepatUploader />}
           {activeModel === 'multi-motif' && <MultiMotifDetector onFallback={() => setActiveModel('scan-cepat')} />}
           {activeModel === 'wastra-studio' && (
@@ -133,8 +143,12 @@ export function UnifiedAiWorkspace({
       </div>
 
       {/* Gemini-Style Unified Input/Action Bar */}
-      <div className="w-full max-w-3xl px-5 mt-auto mx-auto flex flex-col items-center justify-center">
-        <div className={`relative flex items-center rounded-full border border-border bg-card p-1.5 md:p-2 shadow-sm focus-within:ring-2 focus-within:ring-gold transition-all duration-500 ease-out ${activeModel === 'wastra-studio' ? 'w-full' : 'w-fit shadow-md'}`}>
+      <div className={`w-full max-w-3xl px-5 mx-auto flex flex-col items-center justify-center transition-all duration-500 ${
+        activeModel === 'multi-motif' ? 'absolute bottom-24 z-40' : 'mt-auto'
+      }`}>
+        <div className={`relative flex items-center rounded-full border border-border p-1.5 md:p-2 shadow-sm focus-within:ring-2 focus-within:ring-gold transition-all duration-500 ease-out ${
+          activeModel === 'wastra-studio' ? 'w-full bg-card' : 'w-fit shadow-md bg-card/90 backdrop-blur-md'
+        }`}>
           
           {activeModel === 'wastra-studio' && (
             <button className="flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-background hover:text-foreground">
@@ -222,23 +236,29 @@ export function UnifiedAiWorkspace({
         </div>
         
         {/* Gemini AI Disclaimer Text and Info Modal */}
-        <div className="relative mt-4 flex flex-col items-center justify-center gap-2 text-center z-40">
-          <p className="text-[11px] text-muted-foreground">
+        <div className={`relative flex flex-col items-center justify-center gap-2 text-center z-[100] transition-all duration-500 ${
+          activeModel === 'multi-motif' ? 'absolute bottom-6 w-full px-5' : 'mt-4'
+        }`}>
+          <p className={`text-[11px] ${activeModel === 'multi-motif' ? 'text-white/70 mix-blend-difference' : 'text-muted-foreground'}`}>
             Wastra.ai dapat membuat kesalahan dalam mengenali motif. Harap periksa kembali informasinya.
           </p>
           
           <button
             onClick={() => setShowInfo(!showInfo)}
-            className="relative font-bold text-xs text-foreground group transition-colors hover:text-teal"
+            className={`relative font-bold text-xs group transition-colors ${
+              activeModel === 'multi-motif' ? 'text-white hover:text-teal-300 drop-shadow-md' : 'text-foreground hover:text-teal'
+            }`}
             aria-label="Info Detail Model AI"
           >
             Detail & Akurasi Model AI
-            <span className="absolute -bottom-1 left-0 h-1 w-full rounded-full bg-teal/40 group-hover:bg-teal transition-colors" />
+            <span className={`absolute -bottom-1 left-0 h-1 w-full rounded-full transition-colors ${
+              activeModel === 'multi-motif' ? 'bg-teal-400/40 group-hover:bg-teal-300' : 'bg-teal/40 group-hover:bg-teal'
+            }`} />
           </button>
           
           {/* Animated Pop-out Modal */}
           <div 
-            className={`absolute bottom-[calc(100%+1.5rem)] left-1/2 -translate-x-1/2 w-[calc(100vw-2rem)] max-w-sm sm:w-96 rounded-3xl border border-border bg-card p-5 shadow-2xl transition-all duration-300 ease-out origin-bottom text-left z-50 ${
+            className={`absolute bottom-[calc(100%+1.5rem)] left-1/2 -translate-x-1/2 w-[calc(100vw-2rem)] max-w-sm md:max-w-none md:w-[550px] lg:w-[650px] rounded-3xl border border-border bg-card p-5 md:p-7 shadow-2xl transition-all duration-300 ease-out origin-bottom text-left z-50 ${
               showInfo ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-50 translate-y-6 pointer-events-none'
             }`}
           >
