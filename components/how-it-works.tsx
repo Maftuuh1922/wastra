@@ -44,7 +44,7 @@ export function HowItWorks() {
                   aria-hidden="true"
                 />
               )}
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gold font-serif text-xl font-bold text-foreground">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary font-serif text-xl font-bold text-secondary">
                 {s.number}
               </div>
               <h3 className="mt-5 font-serif text-lg font-bold text-foreground">
@@ -60,7 +60,7 @@ export function HowItWorks() {
         <div className="mt-14 flex justify-center">
           <Link
             href="/scan-cepat"
-            className="inline-flex items-center gap-2 rounded-full bg-gold px-7 py-3.5 text-base font-semibold text-foreground transition-opacity hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-base font-semibold text-secondary transition-opacity hover:opacity-90"
           >
             <ScanLine className="h-5 w-5" aria-hidden="true" />
             Mulai Scan Sekarang

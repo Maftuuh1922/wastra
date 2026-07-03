@@ -58,8 +58,8 @@ export function MotifCatalog() {
             </p>
           </div>
           <Link
-            href="/scan-cepat"
-            className="inline-flex w-fit items-center gap-2 rounded-full bg-teal px-5 py-2.5 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"
+            href="/ai"
+            className="inline-flex w-fit items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition-opacity hover:opacity-90"
           >
             <ScanSearch className="h-4 w-4" aria-hidden="true" />
             Cek Keaslian Motif

@@ -111,7 +111,7 @@ export function LearningCenter() {
                 onClick={() => setLevel(l.id)}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                   level === l.id
-                    ? 'bg-gold text-foreground'
+                    ? 'bg-primary text-secondary'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >

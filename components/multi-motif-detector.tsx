@@ -1,9 +1,9 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { Loader2, RotateCcw, Upload } from 'lucide-react'
+import { useRef, useState, useEffect } from 'react'
+import { Camera, Loader2, RotateCcw, Upload, Scan, Zap, ZapOff, SwitchCamera, Maximize, Minimize } from 'lucide-react'
 
-type DetectState = 'idle' | 'analyzing' | 'done'
+type DetectState = 'idle' | 'camera_active' | 'analyzing' | 'done' | 'camera_error' | 'done_live'
 
 // Bounding boxes as % of image dimensions (simulated detections)
 const detections = [
@@ -13,87 +13,234 @@ const detections = [
   { label: 'Truntum', confidence: 83, x: 77, y: 8, w: 21, h: 84 },
 ]
 
-export function MultiMotifDetector() {
+export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) {
   const [state, setState] = useState<DetectState>('idle')
   const [imageSrc, setImageSrc] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [flashOn, setFlashOn] = useState(false)
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  const startAnalysis = (src: string) => {
-    setImageSrc(src)
-    setState('analyzing')
-    setTimeout(() => setState('done'), 2600)
+  // Start camera on mount
+  useEffect(() => {
+    startCamera(facingMode)
+    return () => {
+      stopCamera()
+    }
+  }, [])
+
+  const startCamera = async (mode = 'environment') => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: mode } // Prefer rear camera if available
+      })
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
+      setState('camera_active')
+      
+      // Simulate Auto-Detect after 2.5 seconds
+      setTimeout(() => {
+        if (streamRef.current) {
+          setState('analyzing')
+          setTimeout(() => {
+             setState('done_live')
+          }, 1500)
+        }
+      }, 2500)
+    } catch (err) {
+      console.error('Camera access denied or unavailable', err)
+      setState('camera_error')
+    }
   }
 
-  const handleFile = (file: File | undefined) => {
-    if (!file || !file.type.startsWith('image/')) return
-    const reader = new FileReader()
-    reader.onload = () => startAnalysis(reader.result as string)
-    reader.readAsDataURL(file)
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+  }
+
+  const captureAndShowDetails = () => {
+    if (!videoRef.current || !canvasRef.current) return
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    
+    // Set canvas dimensions to match video stream
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    
+    const ctx = canvas.getContext('2d')
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      const dataUrl = canvas.toDataURL('image/png')
+      stopCamera()
+      setImageSrc(dataUrl)
+      setState('done')
+    }
+  }
+
+  const toggleCamera = () => {
+    const newMode = facingMode === 'environment' ? 'user' : 'environment'
+    setFacingMode(newMode)
+    stopCamera()
+    setTimeout(() => startCamera(newMode), 300)
+  }
+
+  const toggleFlash = () => {
+    setFlashOn(prev => !prev)
+  }
+
+  const handleFallback = () => {
+    stopCamera()
+    if (onFallback) onFallback()
   }
 
   const reset = () => {
-    setState('idle')
     setImageSrc(null)
-    if (inputRef.current) inputRef.current.value = ''
+    startCamera() // Restart camera
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      {state === 'idle' && (
-        <div className="flex flex-col gap-4">
-          <label
-            className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-teal/50 bg-card px-6 py-16 text-center transition-colors hover:border-teal"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault()
-              handleFile(e.dataTransfer.files[0])
-            }}
-          >
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal">
-              <Upload className="h-6 w-6 text-accent-foreground" aria-hidden="true" />
-            </div>
-            <p className="font-serif text-lg font-bold text-foreground">
-              Unggah foto berisi banyak motif
-            </p>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Cocok untuk etalase toko, pameran, atau kain tambal
-            </p>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              onChange={(e) => handleFile(e.target.files?.[0])}
+    <div className="mx-auto w-full max-w-4xl">
+      
+      {(state === 'camera_active' || state === 'analyzing' || state === 'done_live') && !imageSrc && (
+        <div className="relative flex flex-col items-center gap-4">
+          <div className={`${isFullscreen ? 'fixed inset-0 z-30 rounded-none border-none aspect-auto' : 'relative overflow-hidden rounded-3xl border-2 border-border shadow-lg w-full h-[55vh] md:h-auto md:aspect-video'} bg-black flex items-center justify-center group transition-all duration-500`}>
+            
+            {/* Camera Controls */}
+            {(state === 'camera_active' || state === 'analyzing') && (
+              <div className={`absolute ${isFullscreen ? 'top-20 md:top-24 right-4 md:right-8' : 'top-4 right-4'} z-20 flex flex-col gap-3 transition-all duration-500`}>
+                <button onClick={() => setIsFullscreen(!isFullscreen)} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg">
+                  {isFullscreen ? <Minimize className="h-5 w-5 text-white" /> : <Maximize className="h-5 w-5 text-white" />}
+                </button>
+                <button onClick={toggleFlash} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg">
+                  {flashOn ? <Zap className="h-5 w-5 fill-yellow-400 text-yellow-400" /> : <ZapOff className="h-5 w-5 text-white" />}
+                </button>
+                <button onClick={toggleCamera} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg">
+                  <SwitchCamera className="h-5 w-5 text-white" />
+                </button>
+              </div>
+            )}
+
+            {/* Live Video Feed */}
+            <video 
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
             />
-          </label>
-          <button
-            type="button"
-            onClick={() => startAnalysis('/images/demo-multi.png')}
-            className="mx-auto text-sm font-medium text-teal underline-offset-4 hover:underline"
-          >
-            Tidak punya foto? Coba dengan contoh etalase toko
-          </button>
+            
+            {/* Scanning overlay animation */}
+            {(state === 'camera_active' || state === 'analyzing') && (
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="w-full h-full border-4 border-teal/40 rounded-3xl" />
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-teal/0 via-teal/20 to-teal/0 animate-[scan_3s_ease-in-out_infinite]" />
+                <Scan className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-24 text-teal/50 animate-pulse" />
+              </div>
+            )}
+
+            {/* Live Bounding Boxes (Auto Detect) */}
+            {state === 'done_live' && (
+              <div className="absolute inset-0 pointer-events-none">
+                {detections.map((d) => (
+                  <div
+                    key={d.label}
+                    className="absolute rounded-md border-[3px] border-teal bg-teal/10 shadow-[0_0_15px_rgba(69,133,136,0.5)] transition-all duration-300"
+                    style={{
+                      left: `${d.x}%`,
+                      top: `${d.y}%`,
+                      width: `${d.w}%`,
+                      height: `${d.h}%`,
+                    }}
+                  >
+                    <span className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full rounded-md bg-teal px-3 py-1 text-sm font-bold text-accent-foreground shadow-lg whitespace-nowrap">
+                      {d.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Hidden canvas for capturing frame */}
+            <canvas ref={canvasRef} className="hidden" />
+
+            {state === 'done_live' && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
+                <button
+                  onClick={captureAndShowDetails}
+                  className="flex items-center gap-2 rounded-full bg-teal px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-teal/90 transition-transform active:scale-95 cursor-pointer pointer-events-auto"
+                >
+                  <Camera className="h-5 w-5" />
+                  Lihat Detail Motif
+                </button>
+              </div>
+            )}
+          </div>
+          
+          <p className="text-sm font-medium text-foreground">
+            {state === 'camera_active' && 'Sedang menyorot kain...'}
+            {state === 'analyzing' && 'Menganalisis pola...'}
+            {state === 'done_live' && 'Motif terdeteksi secara langsung (Live)!'}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <button onClick={handleFallback} className="underline underline-offset-2 hover:text-foreground">Tutup kamera & unggah foto manual</button>
+          </p>
+        </div>
+      )}
+
+      {(state === 'idle' || state === 'camera_error') && (
+        <div className="flex flex-col items-center justify-center gap-6 rounded-3xl border border-border bg-card/60 px-6 py-24 text-center transition-all hover:bg-card hover:shadow-md">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-teal/10">
+              <Camera className="h-10 w-10 text-teal" aria-hidden="true" />
+            </div>
+            <p className="font-serif text-xl font-medium text-foreground">
+              {state === 'camera_error' ? 'Kamera ditolak atau tidak tersedia.' : 'Memulai kamera...'}
+            </p>
+            {state === 'camera_error' && (
+              <div className="flex flex-col gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={handleFallback}
+                  className="rounded-full bg-teal px-6 py-3 text-sm font-semibold text-white hover:bg-teal/90"
+                >
+                  Gunakan Fitur Scan Cepat
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startCamera(facingMode)}
+                  className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Coba aktifkan kamera lagi
+                </button>
+              </div>
+            )}
         </div>
       )}
 
       {state === 'analyzing' && imageSrc && (
-        <div className="flex flex-col items-center gap-5 rounded-2xl border border-border bg-card p-8">
+        <div className="flex flex-col items-center gap-5 rounded-3xl border border-border bg-card p-8 aspect-video w-full justify-center">
           <img
             src={imageSrc || '/placeholder.svg'}
             alt="Foto yang sedang dianalisis untuk deteksi banyak motif"
-            className="max-h-80 rounded-xl object-cover"
+            className="max-h-64 rounded-xl object-cover opacity-50"
           />
           <div className="flex items-center gap-3 text-teal">
             <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
             <p className="text-sm font-medium">
-              Mendeteksi motif-motif dalam foto{'\u2026'}
+              YOLO sedang mendeteksi motif-motif dalam foto{'\u2026'}
             </p>
           </div>
         </div>
       )}
 
       {state === 'done' && imageSrc && (
-        <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-5 md:p-7">
+        <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 md:p-7">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-teal">
               Hasil Identifikasi
@@ -107,7 +254,7 @@ export function MultiMotifDetector() {
             <img
               src={imageSrc || '/placeholder.svg'}
               alt="Foto dengan kotak penanda motif yang terdeteksi"
-              className="w-full object-cover"
+              className="w-full object-cover max-h-[60vh]"
             />
             {detections.map((d) => (
               <div
@@ -120,7 +267,7 @@ export function MultiMotifDetector() {
                   height: `${d.h}%`,
                 }}
               >
-                <span className="absolute -top-0.5 left-0 -translate-y-full rounded-t-md bg-teal px-2 py-0.5 text-xs font-semibold text-accent-foreground">
+                <span className="absolute -top-0.5 left-0 -translate-y-full rounded-t-md bg-teal px-2 py-0.5 text-xs font-semibold text-accent-foreground shadow-md whitespace-nowrap">
                   {d.label}
                 </span>
               </div>
@@ -160,7 +307,7 @@ export function MultiMotifDetector() {
             className="inline-flex w-fit items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
           >
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            Deteksi Foto Lain
+            Deteksi Foto Lain (Buka Kamera)
           </button>
         </div>
       )}

@@ -43,22 +43,31 @@ export function ScanCepatUploader() {
       {state === 'idle' && (
         <div className="flex flex-col gap-4">
           <label
-            className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-teal/50 bg-card px-6 py-16 text-center transition-colors hover:border-teal"
+            className="group relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-[2.5rem] border-2 border-dashed border-teal/40 bg-gradient-to-b from-card/80 to-card/30 px-6 py-20 text-center transition-all duration-300 hover:border-teal hover:bg-teal/5 hover:shadow-[0_8px_40px_rgba(69,133,136,0.12)] overflow-hidden"
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault()
               handleFile(e.dataTransfer.files[0])
             }}
           >
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal">
-              <Upload className="h-6 w-6 text-accent-foreground" aria-hidden="true" />
+            {/* Glowing background effect on hover */}
+            <div className="absolute inset-0 -z-10 rounded-[2.5rem] bg-teal/0 blur-2xl transition-all duration-500 group-hover:bg-teal/10" />
+            
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm shadow-sm ring-1 ring-border transition-all duration-500 group-hover:scale-110 group-hover:shadow-md group-hover:ring-teal/60">
+              <Upload className="h-10 w-10 text-teal transition-transform duration-500 group-hover:-translate-y-1.5" aria-hidden="true" />
+              {/* Subtle ping animation on hover */}
+              <div className="absolute inset-0 rounded-full border-2 border-teal opacity-0 transition-opacity duration-300 group-hover:animate-ping group-hover:opacity-30" style={{ animationDuration: '2s' }} />
             </div>
-            <p className="font-serif text-lg font-bold text-foreground">
-              Unggah foto kain batik Anda
-            </p>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Seret dan lepas gambar di sini, atau klik untuk memilih file
-            </p>
+            
+            <div className="space-y-2">
+              <p className="font-serif text-2xl md:text-3xl font-bold text-foreground transition-colors duration-300 group-hover:text-teal">
+                Unggah Foto Kain
+              </p>
+              <p className="text-sm md:text-base text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                Tarik & lepas file foto batik Anda di sini, atau <span className="font-semibold text-teal underline underline-offset-4">telusuri perangkat</span>
+              </p>
+            </div>
+            
             <input
               ref={inputRef}
               type="file"
@@ -70,9 +79,9 @@ export function ScanCepatUploader() {
           <button
             type="button"
             onClick={() => startAnalysis('/images/demo-scan.png')}
-            className="mx-auto text-sm font-medium text-teal underline-offset-4 hover:underline"
+            className="mx-auto text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            Tidak punya foto? Coba dengan contoh kain kawung
+            Atau coba dengan kain kawung contoh
           </button>
         </div>
       )}
@@ -151,7 +160,7 @@ export function ScanCepatUploader() {
           </div>
 
           <Link
-            href="/deteksi-multi-motif"
+            href="/ai?tab=multi-motif"
             className="group flex items-center justify-between rounded-xl border border-teal/40 bg-card px-5 py-4 transition-colors hover:border-teal"
           >
             <span className="text-sm text-foreground">
