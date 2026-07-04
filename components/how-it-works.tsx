@@ -28,7 +28,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="bg-background py-20 md:py-28">
+    <section className="py-20 md:py-28">
       <div className="mx-auto max-w-5xl px-5 md:px-8">
         <ScrollReveal direction="down" className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-widest text-terracotta">

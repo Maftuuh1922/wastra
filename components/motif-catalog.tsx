@@ -42,7 +42,7 @@ const motifs = [
 
 export function MotifCatalog() {
   return (
-    <section id="katalog" className="bg-background py-20 md:py-28">
+    <section id="katalog" className="py-20 md:py-28">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">

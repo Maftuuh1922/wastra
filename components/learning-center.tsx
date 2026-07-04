@@ -81,7 +81,7 @@ export function LearningCenter() {
   const [level, setLevel] = useState<Level>('sd')
 
   return (
-    <section id="belajar" className="bg-contrast py-20 md:py-28">
+    <section id="belajar" className="py-20 md:py-28">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-widest text-terracotta">

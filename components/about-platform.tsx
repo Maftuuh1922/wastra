@@ -34,7 +34,7 @@ const features = [
 
 export function AboutPlatform() {
   return (
-    <section className="section-texture-kawung bg-background py-20 md:py-28">
+    <section className="py-20 md:py-28">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <ScrollReveal className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-widest text-terracotta">
