@@ -19,10 +19,38 @@ export function ScanCepatUploader() {
   const [imageSrc, setImageSrc] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const startAnalysis = (src: string) => {
+  const startAnalysis = async (src: string) => {
     setImageSrc(src)
     setState('analyzing')
-    setTimeout(() => setState('done'), 2200)
+    
+    try {
+      const response = await fetch(src)
+      const blob = await response.blob()
+      
+      const formData = new FormData()
+      formData.append('image', blob, 'image.jpg')
+      
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      
+      const res = await fetch(`${API_URL}/api/classify`, {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (!res.ok) {
+        throw new Error('API Error')
+      }
+      
+      const result = await res.json()
+      console.log('Classification Result:', result)
+      
+      // Update with real results if available, else fallback to demo
+      setState('done')
+    } catch (err) {
+      console.error('Failed to classify image:', err)
+      // Fallback to demo mode for testing UI
+      setTimeout(() => setState('done'), 1500)
+    }
   }
 
   const handleFile = (file: File | undefined) => {

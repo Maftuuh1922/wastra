@@ -1,10 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
+import { useRef } from 'react'
 import { ScrollReveal } from '@/components/scroll-reveal'
 
 export function BenchmarkChart() {
+  const containerRef = useRef(null)
+  const isInView = useInView(containerRef, { once: true, margin: "-10%" })
+
   const data = [
     { name: 'MobileNetV3', role: 'Scan Cepat', fps: 92, accuracy: 94.8 },
     { name: 'YOLOv8', role: 'Multi-Motif', fps: 45, accuracy: 91.5 },
@@ -18,40 +22,28 @@ export function BenchmarkChart() {
     return (
       <div className="flex flex-col gap-[2px]">
         {[0, 1, 2].map((row) => (
-          <motion.div 
-            key={row} 
-            className="flex gap-[2px]"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-10%" }}
-            variants={{
-              visible: { transition: { staggerChildren: 0.015, delayChildren: row * 0.1 } }
-            }}
-          >
+          <div key={row} className="flex gap-[2px]">
             {Array.from({ length: blockCount }).map((_, i) => {
               const colors = ['bg-foreground', 'bg-foreground', 'bg-foreground', 'bg-background', 'bg-white'];
               const offset = isAccuracy ? 10 : 0;
               const hash = Math.floor(Math.abs(Math.sin(i * 12.9898 + row * 78.233 + offset) * 43758.5453));
               const blockColor = colors[hash % colors.length];
               return (
-                <motion.div 
+                <div 
                   key={i} 
-                  variants={{
-                    hidden: { opacity: 0, scale: 0.2 },
-                    visible: { opacity: 1, scale: 1 }
-                  }}
-                  className={`w-full aspect-square rounded-[1px] ${i < filled ? blockColor : 'bg-foreground/15'}`} 
+                  className={`w-full aspect-square rounded-[1px] ${i < filled ? blockColor : 'bg-foreground/15'} ${isInView ? 'animate-pop-in' : 'opacity-0'}`} 
+                  style={{ animationDelay: `${(row * 0.1) + (i * 0.015)}s` }}
                 />
               )
             })}
-          </motion.div>
+          </div>
         ))}
       </div>
     )
   }
 
   return (
-    <section className="bg-transparent py-10 pb-20 md:pb-28">
+    <section ref={containerRef} className="bg-transparent py-10 pb-20 md:pb-28">
       <div className="mx-auto max-w-4xl px-5 md:px-8">
         <ScrollReveal direction="up">
           <div className="relative rounded-3xl bg-[#c29623]/25 border border-[#c29623]/30 shadow-sm overflow-hidden">

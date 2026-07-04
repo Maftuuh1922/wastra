@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { Loader2, RefreshCw } from 'lucide-react'
 
 type StudioState = 'idle' | 'generating' | 'done'
@@ -43,9 +44,27 @@ export function WastraStudioGenerator({ externalPrompt, trigger }: WastraStudioG
     <div className="mx-auto w-full max-w-2xl">
       {state === 'idle' && (
         <div className="flex flex-col items-center justify-center p-10 text-center opacity-70">
-          <p className="text-sm font-medium text-muted-foreground">
-            Ketik deskripsi batik di bawah, lalu tekan Enter untuk mulai berkreasi.
-          </p>
+          <motion.p 
+            className="text-sm font-medium text-muted-foreground"
+            variants={{
+              hidden: { opacity: 1 },
+              visible: { transition: { staggerChildren: 0.03 } }
+            }}
+            initial="hidden"
+            animate="visible"
+          >
+            {"Ketik deskripsi batik di bawah, lalu tekan Enter untuk mulai berkreasi.".split("").map((char, index) => (
+              <motion.span
+                key={index}
+                variants={{
+                  hidden: { opacity: 0, y: 2 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+              >
+                {char}
+              </motion.span>
+            ))}
+          </motion.p>
         </div>
       )}
 

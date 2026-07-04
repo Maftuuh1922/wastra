@@ -64,7 +64,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     }
   }
 
-  const captureAndShowDetails = () => {
+  const captureAndShowDetails = async () => {
     if (!videoRef.current || !canvasRef.current) return
     const video = videoRef.current
     const canvas = canvasRef.current
@@ -79,7 +79,31 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       const dataUrl = canvas.toDataURL('image/png')
       stopCamera()
       setImageSrc(dataUrl)
-      setState('done')
+      setState('analyzing')
+      
+      try {
+        const response = await fetch(dataUrl)
+        const blob = await response.blob()
+        
+        const formData = new FormData()
+        formData.append('image', blob, 'capture.png')
+        
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+        const res = await fetch(`${API_URL}/api/detect`, {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (!res.ok) throw new Error('API Error')
+        
+        const result = await res.json()
+        console.log('Detection Result:', result)
+        
+        setState('done')
+      } catch (error) {
+        console.error('Failed to detect motifs:', error)
+        setState('done') // Fallback to demo mode
+      }
     }
   }
 

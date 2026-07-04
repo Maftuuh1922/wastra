@@ -85,7 +85,7 @@ export function UnifiedAiWorkspace({
     <div className="relative flex h-full w-full flex-col items-center pt-24 pb-12">
       {/* Floating Popup (Toast) */}
       {showPopup && (
-        <div className="fixed top-24 left-1/2 z-50 w-[90%] max-w-sm -translate-x-1/2 md:top-auto md:bottom-6 md:left-auto md:right-6 md:translate-x-0 rounded-2xl border border-border bg-card/95 p-4 shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-top-4 md:slide-in-from-bottom-4 duration-500">
+        <div className="fixed top-auto bottom-36 left-1/2 z-50 w-[90%] max-w-sm -translate-x-1/2 md:bottom-6 md:left-auto md:right-6 md:translate-x-0 rounded-2xl border border-border bg-card/95 p-4 shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
           <button
             onClick={() => setShowPopup(false)}
             className="absolute right-3 top-3 rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
