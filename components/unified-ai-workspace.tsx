@@ -166,7 +166,6 @@ export function UnifiedAiWorkspace({
           )}
 
           {activeModel === 'wastra-studio' ? (
-            <>
               <input
                 type="text"
                 value={prompt}
@@ -180,20 +179,6 @@ export function UnifiedAiWorkspace({
                 placeholder="Ketik imajinasi batik Anda di sini..."
                 className="mx-2 md:mx-3 flex-1 min-w-0 bg-transparent py-2 md:py-3 text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
               />
-              
-              {/* Send Button (Muncul jika ada teks) */}
-              {prompt.trim().length > 0 && (
-                <button 
-                  onClick={() => {
-                    setStudioTrigger((prev) => prev + 1)
-                    setPrompt('') // Clear prompt after send
-                  }}
-                  className="mr-1 md:mr-2 flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-teal text-white hover:bg-teal/90 transition-all shadow-md animate-in zoom-in-90"
-                >
-                  <ArrowUp className="h-4 w-4 md:h-5 md:w-5" />
-                </button>
-              )}
-            </>
           ) : null}
 
           {/* Model Switcher Dropdown */}
@@ -253,9 +238,16 @@ export function UnifiedAiWorkspace({
             )}
           </div>
 
-          {activeModel === 'wastra-studio' && (
-            <button className="ml-1 md:ml-2 flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-background hover:text-foreground">
-              <Mic className="h-4 w-4 md:h-5 md:w-5" />
+          {/* Send Button di Ujung Kanan (menggantikan Mic) */}
+          {activeModel === 'wastra-studio' && prompt.trim().length > 0 && (
+            <button 
+              onClick={() => {
+                setStudioTrigger((prev) => prev + 1)
+                setPrompt('') // Clear prompt after send
+              }}
+              className="ml-1 md:ml-2 flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all shadow-md animate-in zoom-in-90"
+            >
+              <ArrowUp className="h-4 w-4 md:h-5 md:w-5" />
             </button>
           )}
         </div>
