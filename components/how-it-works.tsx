@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { ScanLine } from 'lucide-react'
+import { Camera, ImageUp, ScanLine, Search } from 'lucide-react'
+import { ScrollReveal } from '@/components/scroll-reveal'
 
 const steps = [
   {
@@ -7,18 +8,21 @@ const steps = [
     title: 'Foto atau Unggah',
     description:
       'Ambil foto kain batik dengan kamera ponsel, atau unggah gambar yang sudah ada.',
+    icon: Camera,
   },
   {
     number: '2',
     title: 'AI Menganalisis',
     description:
       'Sistem mengenali pola visual dan mencocokkannya dengan katalog motif Nusantara.',
+    icon: Search,
   },
   {
     number: '3',
     title: 'Kenali Ceritanya',
     description:
       'Dapatkan nama motif, asal daerah, tingkat keyakinan, dan filosofi di baliknya.',
+    icon: ImageUp,
   },
 ]
 
@@ -26,46 +30,42 @@ export function HowItWorks() {
   return (
     <section className="bg-background py-20 md:py-28">
       <div className="mx-auto max-w-5xl px-5 md:px-8">
-        <div className="mx-auto max-w-2xl text-center">
+        <ScrollReveal direction="down" className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-widest text-terracotta">
-            Cara Pakai
+            Cara Kerja
           </p>
           <h2 className="mt-3 text-balance font-serif text-3xl font-bold text-foreground md:text-4xl">
-            Semudah 1 — 2 — 3
+            Tiga Langkah Mudah
           </h2>
-        </div>
+        </ScrollReveal>
 
-        <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-6">
+        <div className="mt-12 grid gap-8 sm:grid-cols-3">
           {steps.map((s, i) => (
-            <div key={s.number} className="relative flex flex-col items-center text-center">
-              {i < steps.length - 1 && (
-                <div
-                  className="absolute left-[calc(50%+2.5rem)] top-7 hidden h-px w-[calc(100%-5rem)] bg-border md:block"
-                  aria-hidden="true"
-                />
-              )}
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary font-serif text-xl font-bold text-secondary">
-                {s.number}
+            <ScrollReveal key={s.title} delay={0.2 + i * 0.15}>
+              <div className="flex flex-col items-center text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-sm border border-border transition-transform hover:scale-110 duration-300">
+                  <s.icon className="h-8 w-8 text-gold" aria-hidden="true" />
+                </div>
+                <h3 className="mt-5 font-serif text-lg font-bold text-foreground">
+                  {s.title}
+                </h3>
+                <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
+                  {s.description}
+                </p>
               </div>
-              <h3 className="mt-5 font-serif text-lg font-bold text-foreground">
-                {s.title}
-              </h3>
-              <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
-                {s.description}
-              </p>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
 
-        <div className="mt-14 flex justify-center">
+        <ScrollReveal delay={0.6} direction="up" className="mt-14 flex justify-center">
           <Link
-            href="/scan-cepat"
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-base font-semibold text-secondary transition-opacity hover:opacity-90"
+            href="/ai"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 text-base font-semibold text-secondary transition-opacity hover:opacity-90 shadow-lg"
           >
             <ScanLine className="h-5 w-5" aria-hidden="true" />
-            Mulai Scan Sekarang
+            Get Started
           </Link>
-        </div>
+        </ScrollReveal>
       </div>
     </section>
   )

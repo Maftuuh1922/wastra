@@ -2,11 +2,16 @@
 
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { ScrollReveal } from '@/components/scroll-reveal'
 
 const faqs = [
   {
     q: 'Apakah hasil identifikasi Wastra.ai selalu akurat?',
     a: 'Tidak selalu. AI kami memberikan estimasi berdasarkan pola visual beserta tingkat keyakinannya. Untuk kepastian formal, kami sarankan berkonsultasi dengan ahli atau lembaga budaya terkait.',
+  },
+  {
+    q: 'Berapa benchmark kecepatan dan akurasi AI yang digunakan?',
+    a: '• MobileNetV3 (Scan Cepat): 92 FPS (~10.8ms), Akurasi 94.8% (ideal untuk scan instan kain utuh).\n• YOLOv8 (Multi-Motif): 45 FPS (~22.2ms), Akurasi 91.5% (akurat untuk mendeteksi banyak motif bertumpuk secara live).\n• Stable Diffusion (Wastra Studio): ~4.5 detik per generasi (1024x1024px, dioptimalkan untuk T4 GPU).',
   },
   {
     q: 'Apa bedanya Scan Cepat dan Deteksi Multi-Motif?',
@@ -32,22 +37,22 @@ export function Faq() {
   return (
     <section id="faq" className="section-texture-parang bg-card py-20 md:py-28">
       <div className="mx-auto max-w-3xl px-5 md:px-8">
-        <div className="text-center">
+        <ScrollReveal direction="down" className="text-center">
           <p className="text-sm font-semibold uppercase tracking-widest text-terracotta">
             FAQ
           </p>
           <h2 className="mt-3 text-balance font-serif text-3xl font-bold text-foreground md:text-4xl">
             Pertanyaan yang Sering Diajukan
           </h2>
-        </div>
+        </ScrollReveal>
 
         <div className="mt-10 flex flex-col gap-3">
           {faqs.map((item, i) => {
             const isOpen = open === i
             return (
-              <div
-                key={item.q}
-                className="rounded-xl border border-border bg-background"
+              <ScrollReveal key={item.q} delay={i * 0.1}>
+                <div
+                  className="rounded-xl border border-border bg-background"
               >
                 <button
                   type="button"
@@ -70,7 +75,8 @@ export function Faq() {
                     {item.a}
                   </p>
                 )}
-              </div>
+                </div>
+              </ScrollReveal>
             )
           })}
         </div>

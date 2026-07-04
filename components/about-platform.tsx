@@ -1,4 +1,5 @@
 import { BookOpen, Leaf, ScanSearch, Users } from 'lucide-react'
+import { ScrollReveal } from '@/components/scroll-reveal'
 
 const features = [
   {
@@ -35,7 +36,7 @@ export function AboutPlatform() {
   return (
     <section className="section-texture-kawung bg-background py-20 md:py-28">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
-        <div className="max-w-2xl">
+        <ScrollReveal className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-widest text-terracotta">
             Tentang Platform
           </p>
@@ -47,22 +48,23 @@ export function AboutPlatform() {
             mengenal dan membanggakan kekayaan motif batik Nusantara, di mana
             pun dan kapan pun.
           </p>
-        </div>
+        </ScrollReveal>
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((f) => (
-            <article
-              key={f.title}
-              className="rounded-2xl border border-border bg-card p-6"
-            >
-              <f.icon className={`h-8 w-8 ${f.accent}`} aria-hidden="true" />
-              <h3 className="mt-4 font-serif text-lg font-bold text-foreground">
-                {f.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {f.description}
-              </p>
-            </article>
+          {features.map((f, i) => (
+            <ScrollReveal key={f.title} delay={i * 0.15}>
+              <article
+                className="h-full rounded-2xl border border-border bg-card p-6 transition-all hover:-translate-y-1 hover:shadow-lg"
+              >
+                <f.icon className={`h-8 w-8 ${f.accent}`} aria-hidden="true" />
+                <h3 className="mt-4 font-serif text-lg font-bold text-foreground">
+                  {f.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {f.description}
+                </p>
+              </article>
+            </ScrollReveal>
           ))}
         </div>
       </div>
