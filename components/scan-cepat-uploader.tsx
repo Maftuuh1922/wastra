@@ -17,6 +17,7 @@ const demoResult = {
 export function ScanCepatUploader() {
   const [state, setState] = useState<ScanState>('idle')
   const [imageSrc, setImageSrc] = useState<string | null>(null)
+  const [resultData, setResultData] = useState<any>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const startAnalysis = async (src: string) => {
@@ -41,15 +42,26 @@ export function ScanCepatUploader() {
         throw new Error('API Error')
       }
       
-      const result = await res.json()
-      console.log('Classification Result:', result)
+      const apiResponse = await res.json()
+      console.log('Classification Result:', apiResponse)
       
-      // Update with real results if available, else fallback to demo
+      if (apiResponse.success && apiResponse.data) {
+        // apiResponse.data is from HF Space
+        setResultData({
+          motif: apiResponse.data.prediction.replace('batik-', '').replace(/^\w/, (c: string) => c.toUpperCase()),
+          confidence: Math.round(apiResponse.data.confidence * 100),
+          region: 'Indonesia', // Default region
+          philosophy: 'Motif batik yang indah dan penuh makna budaya.' // Default philosophy
+        })
+      } else {
+        setResultData(demoResult)
+      }
       setState('done')
     } catch (err) {
       console.error('Failed to classify image:', err)
       // Fallback to demo mode for testing UI
-      setTimeout(() => setState('done'), 1500)
+      setResultData(demoResult)
+      setState('done')
     }
   }
 
@@ -142,11 +154,11 @@ export function ScanCepatUploader() {
                   Hasil Identifikasi
                 </p>
                 <h2 className="mt-1 font-serif text-3xl font-bold text-foreground">
-                  Motif {demoResult.motif}
+                  Motif {resultData.motif}
                 </h2>
                 <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4 text-olive" aria-hidden="true" />
-                  Asal daerah: {demoResult.region}
+                  Asal daerah: {resultData.region}
                 </p>
               </div>
 
@@ -154,26 +166,26 @@ export function ScanCepatUploader() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-foreground">Tingkat Keyakinan</span>
                   <span className="font-semibold text-teal">
-                    {demoResult.confidence}%
+                    {resultData.confidence}%
                   </span>
                 </div>
                 <div
                   className="mt-2 h-2.5 overflow-hidden rounded-full bg-contrast"
                   role="progressbar"
-                  aria-valuenow={demoResult.confidence}
+                  aria-valuenow={resultData.confidence}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-label="Tingkat keyakinan identifikasi"
                 >
                   <div
                     className="h-full rounded-full bg-teal"
-                    style={{ width: `${demoResult.confidence}%` }}
+                    style={{ width: `${resultData.confidence}%` }}
                   />
                 </div>
               </div>
 
               <p className="text-sm leading-relaxed text-muted-foreground">
-                {demoResult.philosophy}
+                {resultData.philosophy}
               </p>
 
               <button
