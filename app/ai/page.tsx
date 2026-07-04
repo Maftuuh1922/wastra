@@ -8,12 +8,13 @@ export const metadata: Metadata = {
     'Satu tempat untuk semua kebutuhan identifikasi dan kreasi motif batik Anda dengan teknologi AI terdepan.',
 }
 
-export default function AiPage({
+export default async function AiPage({
   searchParams,
 }: {
-  searchParams: { tab?: string }
+  searchParams: Promise<{ tab?: string }>
 }) {
-  const initialTab = searchParams.tab || 'wastra-studio'
+  const resolvedSearchParams = await searchParams
+  const initialTab = resolvedSearchParams.tab || 'wastra-studio'
 
   return (
     <>
