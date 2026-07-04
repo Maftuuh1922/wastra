@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Loader2, RefreshCw, Download, Share2, Maximize2, X } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 type StudioState = 'idle' | 'generating' | 'done'
 
@@ -48,15 +49,43 @@ export function WastraStudioGenerator({ externalPrompt, trigger }: WastraStudioG
       if (!response.ok) throw new Error('API Error')
 
       const blob = await response.blob()
-      const imageUrl = URL.createObjectURL(blob)
-      setResultImage(imageUrl)
-      setState('done')
+      
+      // Convert Blob to Base64 for permanent storage
+      const reader = new FileReader()
+      reader.readAsDataURL(blob)
+      reader.onloadend = async () => {
+        const base64data = reader.result as string
+        setResultImage(base64data)
+        setState('done')
+
+        // Save to Supabase History if logged in
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          await supabase.from('history').insert({
+            user_id: session.user.id,
+            prompt: trimmed,
+            image_url: base64data
+          })
+          window.dispatchEvent(new Event('history-updated'))
+        }
+      }
     } catch (error) {
       console.error('Failed to generate image:', error)
       // Fallback to demo mode if API fails
+      const fallbackUrl = sampleImages[resultIndex]
       setResultIndex((i) => (i + 1) % sampleImages.length)
       setResultImage(null)
       setState('done')
+      
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        await supabase.from('history').insert({
+          user_id: session.user.id,
+          prompt: trimmed,
+          image_url: fallbackUrl
+        })
+        window.dispatchEvent(new Event('history-updated'))
+      }
     }
   }
 

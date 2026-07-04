@@ -62,7 +62,37 @@ export function UnifiedAiWorkspace({
   
   // Wastra Studio specific state hosted here to connect the unified input bar
   const [prompt, setPrompt] = useState('')
+  const [submittedPrompt, setSubmittedPrompt] = useState('')
   const [studioTrigger, setStudioTrigger] = useState(0)
+  const [profanityError, setProfanityError] = useState(false)
+
+  const FORBIDDEN_WORDS = ['nude', 'naked', 'nsfw', 'blood', 'sexy', 'porn', 'gore']
+  
+  const handleGenerate = () => {
+    if (!prompt.trim()) return
+    
+    // Profanity Filter Check
+    const lowerPrompt = prompt.toLowerCase()
+    const hasProfanity = FORBIDDEN_WORDS.some(word => lowerPrompt.includes(word))
+    
+    if (hasProfanity) {
+      setProfanityError(true)
+      setTimeout(() => setProfanityError(false), 3000)
+      return
+    }
+
+    setSubmittedPrompt(prompt)
+    setStudioTrigger((prev) => prev + 1)
+    setPrompt('') // Clear prompt after send
+  }
+
+  const handleMagicPrompt = () => {
+    const magicText = prompt.trim() ? prompt + ', masterpiece, best quality, ultra-detailed, intricate batik pattern, traditional indonesian motif, 8k resolution' : 'beautiful batik pattern, masterpiece, best quality, ultra-detailed, intricate batik pattern, traditional indonesian motif, 8k resolution'
+    
+    setSubmittedPrompt(magicText)
+    setStudioTrigger((prev) => prev + 1)
+    setPrompt('')
+  }
 
   // UI states for info and popups
   const [showPopup, setShowPopup] = useState(true)
@@ -83,7 +113,7 @@ export function UnifiedAiWorkspace({
   const selectedModelDef = models.find((m) => m.id === activeModel)!
 
   return (
-    <div className="relative flex h-full w-full flex-col items-center pt-24 pb-12">
+    <div className="relative flex h-full w-full flex-col items-center pt-8 pb-12">
       {/* Floating Popup (Toast) */}
       {showPopup && (
         <div className="fixed top-auto bottom-36 left-1/2 z-50 w-[90%] max-w-sm -translate-x-1/2 md:bottom-6 md:left-auto md:right-6 md:translate-x-0 rounded-2xl border border-border bg-card/95 p-4 shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -144,7 +174,7 @@ export function UnifiedAiWorkspace({
           {activeModel === 'multi-motif' && <MultiMotifDetector onFallback={() => setActiveModel('scan-cepat')} />}
           {activeModel === 'wastra-studio' && (
             <WastraStudioGenerator
-              externalPrompt={prompt}
+              externalPrompt={submittedPrompt}
               trigger={studioTrigger}
             />
           )}
@@ -160,25 +190,33 @@ export function UnifiedAiWorkspace({
         }`}>
           
           {activeModel === 'wastra-studio' && (
-            <button className="flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-background hover:text-foreground">
-              <Plus className="h-4 w-4 md:h-5 md:w-5" />
+            <button 
+              onClick={handleMagicPrompt}
+              title="Magic Prompt"
+              className="flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-gold/10 hover:text-gold transition-colors"
+            >
+              <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
             </button>
           )}
 
           {activeModel === 'wastra-studio' ? (
-              <input
-                type="text"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && prompt.trim()) {
-                    setStudioTrigger((prev) => prev + 1)
-                    setPrompt('') // Clear prompt after send
-                  }
-                }}
-                placeholder="Ketik imajinasi batik Anda di sini..."
-                className="mx-2 md:mx-3 flex-1 min-w-0 bg-transparent py-2 md:py-3 text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
-              />
+              <div className="mx-2 md:mx-3 flex-1 min-w-0 relative">
+                <input
+                  type="text"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleGenerate()
+                  }}
+                  placeholder="Ketik imajinasi batik Anda di sini..."
+                  className={`w-full bg-transparent py-2 md:py-3 text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none ${profanityError ? 'text-red-500' : ''}`}
+                />
+                {profanityError && (
+                  <span className="absolute -top-10 left-0 bg-red-500 text-white text-[10px] px-2 py-1 rounded shadow animate-in fade-in slide-in-from-bottom-2">
+                    Kata tidak pantas terdeteksi!
+                  </span>
+                )}
+              </div>
           ) : null}
 
           {/* Model Switcher Dropdown */}
@@ -241,10 +279,7 @@ export function UnifiedAiWorkspace({
           {/* Send Button di Ujung Kanan (menggantikan Mic) */}
           {activeModel === 'wastra-studio' && prompt.trim().length > 0 && (
             <button 
-              onClick={() => {
-                setStudioTrigger((prev) => prev + 1)
-                setPrompt('') // Clear prompt after send
-              }}
+              onClick={handleGenerate}
               className="ml-1 md:ml-2 flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all shadow-md animate-in zoom-in-90"
             >
               <ArrowUp className="h-4 w-4 md:h-5 md:w-5" />

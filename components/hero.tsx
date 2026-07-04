@@ -70,11 +70,11 @@ export function Hero() {
               
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link
-                  href="/ai"
+                  href="/login"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-[#FBF1C7] px-8 py-3.5 text-base font-semibold text-[#3c3836] transition-all hover:bg-[#FBF1C7]/90 hover:scale-[1.02] shadow-lg"
                 >
                   <Sparkles className="h-5 w-5" aria-hidden="true" />
-                  Get Started
+                  Mulai Sekarang
                 </Link>
               </div>
             </div>

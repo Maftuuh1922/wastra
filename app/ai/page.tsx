@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     'Satu tempat untuk semua kebutuhan identifikasi dan kreasi motif batik Anda dengan teknologi AI terdepan.',
 }
 
+import { AiSidebar } from '@/components/ai-sidebar'
+
 export default async function AiPage({
   searchParams,
 }: {
@@ -18,9 +20,11 @@ export default async function AiPage({
 
   return (
     <>
-      <Navbar />
-      <main className="flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
-        <UnifiedAiWorkspace initialTab={initialTab} />
+      <main className="flex h-[100dvh] w-full overflow-hidden bg-background">
+        <AiSidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <UnifiedAiWorkspace initialTab={initialTab} />
+        </div>
       </main>
     </>
   )

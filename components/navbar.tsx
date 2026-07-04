@@ -46,9 +46,12 @@ export function Navbar() {
             setMobileOpen(false)
           }}
           aria-label="Wastra.ai — kembali ke beranda"
-          className={`font-serif text-xl font-bold tracking-tight text-foreground`}
+          className="flex items-center gap-1"
         >
-          Wastra.ai
+          <img src="/images/wastra-logo-eye.png" alt="Wastra Logo" className="h-12 w-12 object-contain scale-125" />
+          <span className="font-serif text-xl font-bold tracking-tight text-foreground">
+            Wastra.ai
+          </span>
         </Link>
 
         {/* Desktop nav */}

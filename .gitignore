@@ -13,3 +13,23 @@ __v0_jsx-dev-runtime.ts
 node_modules
 .next/
 .DS_Store
+
+# Model files (terlalu besar untuk GitHub)
+modl ai/
+*.pt
+*.safetensors
+*.bin
+*.pkl
+
+# Python scripts helper (tidak perlu di-push)
+create_lora_space.py
+create_yolo_space.py
+fix_dockerfile.py
+fix_lora_reqs.py
+upload_hf.py
+upload_models.py
+test_hf_s3.py
+test_s3_configs.py
+copy_images.py
+process_tiles.py
+strip_bg.py
