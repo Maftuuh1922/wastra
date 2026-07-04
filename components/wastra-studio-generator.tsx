@@ -22,15 +22,37 @@ export function WastraStudioGenerator({ externalPrompt, trigger }: WastraStudioG
   const [resultIndex, setResultIndex] = useState(0)
   const [lastPrompt, setLastPrompt] = useState('')
 
-  const generate = (text: string) => {
+  const [resultImage, setResultImage] = useState<string | null>(null)
+
+  const generate = async (text: string) => {
     const trimmed = text?.trim()
     if (!trimmed || state === 'generating') return
     setLastPrompt(trimmed)
     setState('generating')
-    setTimeout(() => {
-      setResultIndex((i) => (i + 1) % sampleImages.length)
+    
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const response = await fetch(`${API_URL}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: trimmed })
+      })
+
+      if (!response.ok) throw new Error('API Error')
+
+      const blob = await response.blob()
+      const imageUrl = URL.createObjectURL(blob)
+      setResultImage(imageUrl)
       setState('done')
-    }, 2400)
+    } catch (error) {
+      console.error('Failed to generate image:', error)
+      // Fallback to demo mode if API fails
+      setResultIndex((i) => (i + 1) % sampleImages.length)
+      setResultImage(null)
+      setState('done')
+    }
   }
 
   // Trigger generation when the external trigger increments
@@ -81,7 +103,7 @@ export function WastraStudioGenerator({ externalPrompt, trigger }: WastraStudioG
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <div className="relative">
             <img
-              src={sampleImages[resultIndex] || '/placeholder.svg'}
+              src={resultImage || sampleImages[resultIndex] || '/placeholder.svg'}
               alt={`Kreasi batik hasil AI terinspirasi dari deskripsi: ${lastPrompt}`}
               className="aspect-square w-full object-cover"
             />
