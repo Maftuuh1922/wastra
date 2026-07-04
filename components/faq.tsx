@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { ScrollReveal } from '@/components/scroll-reveal'
+import { BenchmarkChart } from '@/components/benchmark-chart'
 
 const faqs = [
   {
@@ -11,7 +12,8 @@ const faqs = [
   },
   {
     q: 'Berapa benchmark kecepatan dan akurasi AI yang digunakan?',
-    a: '• MobileNetV3 (Scan Cepat): 92 FPS (~10.8ms), Akurasi 94.8% (ideal untuk scan instan kain utuh).\n• YOLOv8 (Multi-Motif): 45 FPS (~22.2ms), Akurasi 91.5% (akurat untuk mendeteksi banyak motif bertumpuk secara live).\n• Stable Diffusion (Wastra Studio): ~4.5 detik per generasi (1024x1024px, dioptimalkan untuk T4 GPU).',
+    a: 'Berikut adalah perbandingan kecepatan pemrosesan dan akurasi model AI visual yang kami gunakan (berdasarkan pengujian pada dataset validasi kami):',
+    hasChart: true,
   },
   {
     q: 'Apa bedanya Scan Cepat dan Deteksi Multi-Motif?',
@@ -71,9 +73,12 @@ export function Faq() {
                   />
                 </button>
                 {isOpen && (
-                  <p className="px-5 pb-5 text-sm leading-relaxed text-muted-foreground">
-                    {item.a}
-                  </p>
+                  <div className="px-6 pb-6 pt-2">
+                    <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
+                      {item.a}
+                    </p>
+                    {item.hasChart && <BenchmarkChart />}
+                  </div>
                 )}
                 </div>
               </ScrollReveal>

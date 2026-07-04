@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, Menu, ScanLine, Sparkles, X } from 'lucide-react'
+import { ChevronDown, Menu, ScanLine, ScanSearch, Sparkles, X } from 'lucide-react'
 
 const SCROLL_THRESHOLD = 90
 
@@ -74,10 +74,10 @@ export function Navbar() {
 
           <Link
             href="/ai"
-            className="flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background transition-opacity hover:opacity-90"
+            className="flex items-center gap-2 rounded-full bg-teal px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-teal/90 shadow-md hover:scale-105"
           >
-            <Sparkles className="h-4 w-4" aria-hidden="true" />
-            AI Workspace
+            <ScanSearch className="h-4 w-4" aria-hidden="true" />
+            Coba Wastra AI
           </Link>
         </div>
 
@@ -101,7 +101,7 @@ export function Navbar() {
         }`}
       >
         {[
-          { href: '/ai', label: 'AI Workspace' },
+          { href: '/ai', label: 'Coba Wastra AI' },
           { href: '/#katalog', label: 'Katalog' },
           { href: '/#belajar', label: 'Belajar' },
           { href: '/#faq', label: 'FAQ' },
