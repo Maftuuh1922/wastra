@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Clock, LogIn, LogOut, Loader2, Image as ImageIcon } from 'lucide-react'
+import { Menu, X, Clock, LogIn, LogOut, Loader2, Image as ImageIcon, Plus } from 'lucide-react'
 
 type HistoryItem = {
   id: string
@@ -137,13 +137,22 @@ export function AiSidebar() {
           )}
           
           {isOpen && (
-            <button 
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground flex-shrink-0"
-              title="Tutup menu"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => window.dispatchEvent(new Event('new-chat'))}
+                className="p-2 rounded-full hover:bg-secondary transition-colors text-foreground flex-shrink-0 bg-secondary/50 border border-border"
+                title="Mulai Baru (New Chat)"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground flex-shrink-0"
+                title="Tutup menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </div>
           )}
         </div>
 
@@ -190,6 +199,7 @@ export function AiSidebar() {
                   history.map((item) => (
                     <div 
                       key={item.id} 
+                      onClick={() => window.dispatchEvent(new CustomEvent('load-history', { detail: item }))}
                       className={`flex items-center gap-3 rounded-full hover:bg-secondary/50 cursor-pointer transition-colors ${isOpen ? 'p-2' : 'p-2 justify-center'}`}
                       title={!isOpen ? item.prompt : undefined}
                     >
