@@ -4,6 +4,7 @@ import { AboutPlatform } from '@/components/about-platform'
 import { WhyChooseUs } from '@/components/why-choose-us'
 import { MotifCatalog } from '@/components/motif-catalog'
 import { Faq } from '@/components/faq'
+import { BenchmarkChart } from '@/components/benchmark-chart'
 import { CulturalTrends } from '@/components/cultural-trends'
 import { LearningCenter } from '@/components/learning-center'
 import { HowItWorks } from '@/components/how-it-works'
@@ -19,6 +20,7 @@ export default function HomePage() {
         <WhyChooseUs />
         <MotifCatalog />
         <Faq />
+        <BenchmarkChart />
         <CulturalTrends />
         <LearningCenter />
         <HowItWorks />

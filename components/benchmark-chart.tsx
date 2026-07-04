@@ -1,103 +1,91 @@
-import { BarChart, Activity, Zap, Target } from 'lucide-react'
+import Link from 'next/link'
+import { ScrollReveal } from '@/components/scroll-reveal'
 
 export function BenchmarkChart() {
   const data = [
-    { name: 'MobileNetV3 (Scan Cepat)', fps: 92, accuracy: 94.8, color: 'bg-teal' },
-    { name: 'YOLOv8 (Multi-Motif)', fps: 45, accuracy: 91.5, color: 'bg-terracotta' },
+    { name: 'MobileNetV3', role: 'Scan Cepat', fps: 92, accuracy: 94.8 },
+    { name: 'YOLOv8', role: 'Multi-Motif', fps: 45, accuracy: 91.5 },
   ]
 
+  // Using 40 blocks total for the progress bar (2.5% per block)
+  const totalBlocks = 40
+
   return (
-    <div className="mt-4 flex flex-col gap-8 rounded-xl border border-border/50 bg-secondary/30 p-5 md:p-7">
-      
-      {/* FPS Chart */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-gold" />
-          <h4 className="font-semibold text-sm text-foreground">Kecepatan Pemrosesan (FPS)</h4>
-        </div>
-        
-        <div className="relative border-l border-b border-border/60 pb-2 pl-2">
-          {/* Grid Lines */}
-          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-2 pl-2 opacity-10">
-             <div className="w-full h-px bg-foreground" />
-             <div className="w-full h-px bg-foreground" />
-             <div className="w-full h-px bg-foreground" />
-             <div className="w-full h-px bg-foreground" />
-          </div>
+    <section className="bg-background py-10 pb-20 md:pb-28">
+      <div className="mx-auto max-w-4xl px-5 md:px-8">
+        <ScrollReveal direction="up">
+          <div className="flex flex-col gap-8 rounded-3xl bg-[#111111] p-8 md:p-12 text-[#e0e0e0] shadow-2xl font-mono border border-white/5">
+            
+            <h2 className="text-3xl md:text-4xl tracking-[0.2em] font-bold text-white mb-2" style={{ textShadow: '0 0 20px rgba(255,255,255,0.3)' }}>
+              BENCHMARKS
+            </h2>
 
-          <div className="relative z-10 flex flex-col gap-4 pt-2">
-            {data.map((item) => (
-              <div key={item.name} className="flex items-center gap-3">
-                <span className="w-24 shrink-0 text-xs font-medium text-muted-foreground leading-tight">{item.name}</span>
-                <div className="relative h-6 w-full rounded-r-md bg-background overflow-hidden">
-                  <div 
-                    className={`absolute left-0 top-0 h-full ${item.color} transition-all duration-1000 ease-out`}
-                    style={{ width: `${(item.fps / 100) * 100}%` }}
-                  />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white drop-shadow-md">
-                    {item.fps} FPS
-                  </span>
-                </div>
-              </div>
-            ))}
+            {/* FPS SECTION */}
+            <div className="space-y-6">
+              <h3 className="text-sm font-semibold text-white/40 tracking-[0.15em] uppercase">Processing Speed (FPS)</h3>
+              
+              {data.map((item) => {
+                const filled = Math.round((item.fps / 100) * totalBlocks);
+                return (
+                  <div key={`fps-${item.name}`} className="space-y-3">
+                    <div className="flex justify-between text-xs md:text-sm tracking-wider">
+                      <span>{item.name.toUpperCase()}: {item.fps}</span>
+                      <span>LIMIT: 100</span>
+                    </div>
+                    <div className="flex gap-[2px] md:gap-1">
+                      {Array.from({ length: totalBlocks }).map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={`h-4 md:h-5 w-full rounded-sm ${i < filled ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'bg-[#222]'}`} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="w-full h-px bg-[#222] my-4" />
+
+            {/* ACCURACY SECTION */}
+            <div className="space-y-6">
+              <h3 className="text-sm font-semibold text-white/40 tracking-[0.15em] uppercase">Accuracy Rate (%)</h3>
+              
+              {data.map((item) => {
+                const filled = Math.round((item.accuracy / 100) * totalBlocks);
+                return (
+                  <div key={`acc-${item.name}`} className="space-y-3">
+                    <div className="flex justify-between text-xs md:text-sm tracking-wider">
+                      <span>{item.name.toUpperCase()}: {item.accuracy}%</span>
+                      <span>LIMIT: 100%</span>
+                    </div>
+                    <div className="flex gap-[2px] md:gap-1">
+                      {Array.from({ length: totalBlocks }).map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={`h-4 md:h-5 w-full rounded-sm ${i < filled ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'bg-[#222]'}`} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="mt-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-6 pt-4">
+              <p className="text-xs leading-relaxed text-white/50 max-w-sm tracking-widest uppercase">
+                OPTIMIZED FOR EDGE COMPUTING AND REAL-TIME INFERENCE. STABLE DIFFUSION TAKES ~4.5S PER GENERATION.
+              </p>
+              <Link 
+                href="/ai"
+                className="flex items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-bold tracking-widest text-black transition-all hover:bg-white/90 hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] whitespace-nowrap"
+              >
+                DETAILS
+              </Link>
+            </div>
           </div>
-          
-          <div className="mt-2 flex justify-between text-[10px] text-muted-foreground pl-24">
-            <span>0</span>
-            <span>25</span>
-            <span>50</span>
-            <span>75</span>
-            <span>100</span>
-          </div>
-        </div>
+        </ScrollReveal>
       </div>
-
-      {/* Accuracy Chart */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Target className="h-4 w-4 text-teal" />
-          <h4 className="font-semibold text-sm text-foreground">Tingkat Akurasi (%)</h4>
-        </div>
-        
-        <div className="relative border-l border-b border-border/60 pb-2 pl-2">
-          {/* Grid Lines */}
-          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-2 pl-2 opacity-10">
-             <div className="w-full h-px bg-foreground" />
-             <div className="w-full h-px bg-foreground" />
-             <div className="w-full h-px bg-foreground" />
-             <div className="w-full h-px bg-foreground" />
-          </div>
-
-          <div className="relative z-10 flex flex-col gap-4 pt-2">
-            {data.map((item) => (
-              <div key={item.name} className="flex items-center gap-3">
-                <span className="w-24 shrink-0 text-xs font-medium text-muted-foreground leading-tight">{item.name}</span>
-                <div className="relative h-6 w-full rounded-r-md bg-background overflow-hidden">
-                  <div 
-                    className={`absolute left-0 top-0 h-full ${item.color} transition-all duration-1000 ease-out`}
-                    style={{ width: `${item.accuracy}%` }}
-                  />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white drop-shadow-md">
-                    {item.accuracy}%
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <div className="mt-2 flex justify-between text-[10px] text-muted-foreground pl-24">
-            <span>0%</span>
-            <span>25%</span>
-            <span>50%</span>
-            <span>75%</span>
-            <span>100%</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-lg bg-background/50 p-3 text-xs text-muted-foreground">
-        <strong className="text-foreground">Catatan Wastra Studio:</strong> Model Stable Diffusion tidak diukur dengan FPS/Akurasi layaknya deteksi, melainkan menggunakan kecepatan latensi iterasi (~4.5 detik per gambar penuh) untuk menghasilkan gambar sintetis resolusi tinggi.
-      </div>
-    </div>
+    </section>
   )
 }

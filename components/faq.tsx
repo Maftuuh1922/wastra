@@ -3,18 +3,13 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { ScrollReveal } from '@/components/scroll-reveal'
-import { BenchmarkChart } from '@/components/benchmark-chart'
 
 const faqs = [
   {
     q: 'Apakah hasil identifikasi Wastra.ai selalu akurat?',
     a: 'Tidak selalu. AI kami memberikan estimasi berdasarkan pola visual beserta tingkat keyakinannya. Untuk kepastian formal, kami sarankan berkonsultasi dengan ahli atau lembaga budaya terkait.',
   },
-  {
-    q: 'Berapa benchmark kecepatan dan akurasi AI yang digunakan?',
-    a: 'Berikut adalah perbandingan kecepatan pemrosesan dan akurasi model AI visual yang kami gunakan (berdasarkan pengujian pada dataset validasi kami):',
-    hasChart: true,
-  },
+
   {
     q: 'Apa bedanya Scan Cepat dan Deteksi Multi-Motif?',
     a: 'Scan Cepat mengenali satu motif utama dalam satu foto — cocok untuk sehelai kain. Deteksi Multi-Motif adalah alat lanjutan yang mengenali banyak motif sekaligus, misalnya foto etalase toko atau pameran.',
@@ -77,7 +72,6 @@ export function Faq() {
                     <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
                       {item.a}
                     </p>
-                    {item.hasChart && <BenchmarkChart />}
                   </div>
                 )}
                 </div>
