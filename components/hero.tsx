@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { ScanLine, Sparkles } from 'lucide-react'
 
 export function Hero() {
@@ -8,10 +9,13 @@ export function Hero() {
       <div className="relative flex min-h-[85vh] w-full flex-col overflow-hidden rounded-[2.5rem] md:rounded-[3rem] bg-[#3c3836] shadow-2xl">
         
         {/* Background Image */}
-        <img
+        <Image
           src="/images/hero-batik-banana.png"
           alt="Perajin batik sedang membatik dengan canting di atas kain bermotif tradisional"
-          className="absolute inset-0 h-full w-full object-cover"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
         />
 
         {/* Gradient Overlay (only for BG image to darken the room) */}
@@ -32,10 +36,13 @@ export function Hero() {
         </div>
 
         {/* Foreground Image (Cutout) */}
-        <img
+        <Image
           src="/images/hero-batik-banana-fg.png"
           alt=""
-          className="absolute inset-0 h-full w-full object-cover z-20 pointer-events-none"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover z-20 pointer-events-none"
         />
 
         {/* Main Content Area (Bottom Aligned) */}
@@ -80,11 +87,15 @@ export function Hero() {
 
             {/* Right Mini Card */}
             <div className="hidden shrink-0 overflow-hidden rounded-2xl border border-[#FBF1C7]/20 shadow-2xl lg:block bg-[#3c3836]/60 backdrop-blur-md p-2 w-[280px]">
-               <img
-                src="/images/hero-batik-banana.png"
-                alt="Preview Motif"
-                className="h-[150px] w-full rounded-xl object-cover opacity-90"
-               />
+               <div className="relative h-[150px] w-full rounded-xl overflow-hidden">
+                 <Image
+                  src="/images/hero-batik-banana.png"
+                  alt="Preview Motif"
+                  fill
+                  sizes="(min-width: 1024px) 280px, 100vw"
+                  className="object-cover opacity-90"
+                 />
+               </div>
                <div className="mt-3 flex items-center justify-between px-2 pb-1">
                  <span className="text-sm font-semibold text-[#FBF1C7]">Yogyakarta</span>
                  <span className="rounded-full border border-[#FBF1C7]/40 bg-[#FBF1C7]/10 px-2 py-0.5 text-xs font-medium text-[#FBF1C7]">Motif Kawung</span>
