@@ -31,8 +31,12 @@ export function WastraStudioGenerator({ externalPrompt, trigger }: WastraStudioG
     setState('generating')
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-      const response = await fetch(`${API_URL}/api/generate`, {
+      // PENTING: Karena generate gambar AI (LoRA) membutuhkan waktu ~1-2 menit di CPU gratis, 
+      // Vercel Backend (Hobby tier) akan memutus koneksi dalam 10 detik (504 Gateway Timeout).
+      // Solusinya: Kita panggil langsung API Hugging Face dari Frontend untuk mem-bypass Vercel!
+      const SPACE_URL = 'https://maftuh-main-wastra-lora-api.hf.space/generate'
+      
+      const response = await fetch(SPACE_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

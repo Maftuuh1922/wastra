@@ -31,9 +31,10 @@ export function ScanCepatUploader() {
       const formData = new FormData()
       formData.append('image', blob, 'image.jpg')
       
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      // Bypass Vercel 10s timeout by hitting HF Space directly
+      const SPACE_URL = 'https://maftuh-main-batik-classifier.hf.space/predict'
       
-      const res = await fetch(`${API_URL}/api/classify`, {
+      const res = await fetch(SPACE_URL, {
         method: 'POST',
         body: formData
       })
@@ -45,11 +46,10 @@ export function ScanCepatUploader() {
       const apiResponse = await res.json()
       console.log('Classification Result:', apiResponse)
       
-      if (apiResponse.success && apiResponse.data) {
-        // apiResponse.data is from HF Space
+      if (apiResponse.success && apiResponse.prediction) {
         setResultData({
-          motif: apiResponse.data.prediction.replace('batik-', '').replace(/^\w/, (c: string) => c.toUpperCase()),
-          confidence: Math.round(apiResponse.data.confidence * 100),
+          motif: apiResponse.prediction.replace('batik-', '').replace(/^\w/, (c: string) => c.toUpperCase()),
+          confidence: Math.round(apiResponse.confidence * 100),
           region: 'Indonesia', // Default region
           philosophy: 'Motif batik yang indah dan penuh makna budaya.' // Default philosophy
         })

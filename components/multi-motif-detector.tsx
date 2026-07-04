@@ -89,8 +89,10 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
         const formData = new FormData()
         formData.append('image', blob, 'capture.png')
         
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-        const res = await fetch(`${API_URL}/api/detect`, {
+        // Bypass Vercel 10s timeout by hitting HF Space directly
+        const SPACE_URL = 'https://maftuh-main-wastra-yolo-api.hf.space/detect'
+        
+        const res = await fetch(SPACE_URL, {
           method: 'POST',
           body: formData
         })
