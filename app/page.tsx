@@ -14,18 +14,7 @@ export default function HomePage() {
   return (
     <>
       <Navbar />
-      
-      {/* Top Left Corner Pattern */}
-      <div 
-        className="absolute top-0 left-0 w-[80vw] max-w-[800px] h-[600px] z-0 pointer-events-none mix-blend-multiply"
-        style={{
-          backgroundImage: "url('/images/image_primary.webp')", 
-          backgroundSize: "500px", 
-          opacity: 0.5,
-          maskImage: 'radial-gradient(circle at 0% 0%, black 0%, transparent 70%)',
-          WebkitMaskImage: 'radial-gradient(circle at 0% 0%, black 0%, transparent 70%)',
-        }}
-      />
+
 
       <main>
         <Hero />
@@ -47,7 +36,7 @@ export default function HomePage() {
                 backgroundSize: "500px", 
                 backgroundPosition: "center",
                 backgroundRepeat: "repeat", 
-                opacity: 0.5,
+                opacity: 0.25,
                 maskImage: 'radial-gradient(circle at 15% 20%, black 0%, transparent 65%)',
                 WebkitMaskImage: 'radial-gradient(circle at 15% 20%, black 0%, transparent 65%)',
               }}
