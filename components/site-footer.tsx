@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-card">
+    <footer className="relative z-10 pt-12 pb-4">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 md:flex-row md:items-start md:justify-between md:px-8">
         <div className="max-w-sm">
           <p className="font-serif text-xl font-bold text-foreground">Wastra.ai</p>
@@ -38,7 +38,7 @@ export function SiteFooter() {
           </div>
         </nav>
       </div>
-      <div className="border-t border-border">
+      <div>
         <p className="mx-auto max-w-6xl px-5 py-5 text-xs text-muted-foreground md:px-8">
           {'\u00A9'} 2026 Wastra.ai — Dibuat dengan cinta untuk budaya Nusantara.
         </p>

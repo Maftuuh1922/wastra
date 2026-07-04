@@ -17,33 +17,158 @@ export default function HomePage() {
       <main>
         <Hero />
         
-        {/* Spot 2 - Middle Section */}
-        <div className="relative overflow-hidden">
+        {/* Pattern Block 1 */}
+        <div className="relative w-full">
+          {/* Edge fading masks */}
           <div 
-            className="absolute inset-0 z-0 pointer-events-none mix-blend-multiply" 
-            style={{ backgroundImage: "url('/images/image_secondary.webp')", backgroundSize: "350px", backgroundRepeat: "repeat", opacity: 0.08 }} 
-          />
+            className="absolute inset-0 z-0 pointer-events-none mix-blend-multiply"
+            style={{
+              maskImage: 'linear-gradient(to bottom, transparent, black 100px, black calc(100% - 100px), transparent)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 100px, black calc(100% - 100px), transparent)',
+            }} 
+          >
+            <div 
+              className="absolute inset-0"
+              style={{
+                backgroundImage: "url('/images/image_primary.webp')", 
+                backgroundSize: "500px", 
+                backgroundPosition: "center",
+                backgroundRepeat: "repeat", 
+                opacity: 0.5,
+                maskImage: 'radial-gradient(circle at 15% 20%, black 0%, transparent 65%)',
+                WebkitMaskImage: 'radial-gradient(circle at 15% 20%, black 0%, transparent 65%)',
+              }}
+            />
+          </div>
+
           <div className="relative z-10">
             <AboutPlatform />
-            <WhyChooseUs />
-            <MotifCatalog />
           </div>
         </div>
 
-        {/* Spot 3 - Bottom Section */}
-        <div className="relative overflow-hidden">
+        {/* Pattern Block Why Choose Us */}
+        <div className="relative w-full">
           <div 
-            className="absolute inset-0 z-0 pointer-events-none mix-blend-multiply" 
-            style={{ backgroundImage: "url('/images/image_primary.webp')", backgroundSize: "400px", backgroundRepeat: "repeat", opacity: 0.05 }} 
-          />
+            className="absolute inset-0 z-0 pointer-events-none mix-blend-multiply"
+            style={{
+              maskImage: 'linear-gradient(to bottom, transparent, black 100px, black calc(100% - 100px), transparent)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 100px, black calc(100% - 100px), transparent)',
+            }} 
+          >
+            <div 
+              className="absolute inset-0"
+              style={{
+                backgroundImage: "url('/images/image_primary.webp')", 
+                backgroundSize: "500px", 
+                backgroundPosition: "center",
+                backgroundRepeat: "repeat", 
+                opacity: 0.5,
+                maskImage: 'radial-gradient(circle at 85% 80%, black 0%, transparent 65%)',
+                WebkitMaskImage: 'radial-gradient(circle at 85% 80%, black 0%, transparent 65%)',
+              }}
+            />
+          </div>
+          <div className="relative z-10">
+            <WhyChooseUs />
+          </div>
+        </div>
+
+        {/* Plain Block 1 */}
+        <div className="relative z-10 bg-background">
+          <MotifCatalog />
+        </div>
+
+        {/* Pattern Block FAQ */}
+        <div className="relative w-full">
+          <div 
+            className="absolute inset-0 z-0 pointer-events-none mix-blend-multiply"
+            style={{
+              maskImage: 'linear-gradient(to bottom, transparent, black 100px, black calc(100% - 100px), transparent)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 100px, black calc(100% - 100px), transparent)',
+            }} 
+          >
+            <div 
+              className="absolute inset-0"
+              style={{
+                backgroundImage: "url('/images/image_secondary.webp')", 
+                backgroundSize: "400px", 
+                backgroundPosition: "center",
+                backgroundRepeat: "repeat", 
+                opacity: 0.3,
+                maskImage: 'radial-gradient(circle at 50% 0%, black 0%, transparent 60%)',
+                WebkitMaskImage: 'radial-gradient(circle at 50% 0%, black 0%, transparent 60%)',
+              }}
+            />
+          </div>
           <div className="relative z-10">
             <Faq />
+          </div>
+        </div>
+
+        {/* Pattern Block Benchmark */}
+        <div className="relative w-full">
+          <div 
+            className="absolute inset-0 z-0 pointer-events-none mix-blend-multiply"
+            style={{
+              maskImage: 'linear-gradient(to bottom, transparent, black 100px, black calc(100% - 100px), transparent)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 100px, black calc(100% - 100px), transparent)',
+            }} 
+          >
+            <div 
+              className="absolute inset-0"
+              style={{
+                backgroundImage: "url('/images/image_primary.webp')", 
+                backgroundSize: "500px", 
+                backgroundPosition: "center",
+                backgroundRepeat: "repeat", 
+                opacity: 0.5,
+                maskImage: 'linear-gradient(to bottom, black 0%, transparent 60%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 60%)',
+              }}
+            />
+          </div>
+          <div className="relative z-10">
             <BenchmarkChart />
-            <CulturalTrends />
+          </div>
+        </div>
+
+        {/* Plain Block 2 */}
+        <div className="relative z-10 bg-background">
+          <CulturalTrends />
+        </div>
+
+        {/* Pattern Block 2 */}
+        <div className="relative w-full">
+          <div 
+            className="absolute inset-0 z-0 pointer-events-none mix-blend-multiply"
+            style={{
+              maskImage: 'linear-gradient(to bottom, transparent, black 100px, black calc(100% - 100px), transparent)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 100px, black calc(100% - 100px), transparent)',
+            }} 
+          >
+            <div 
+              className="absolute inset-0"
+              style={{
+                backgroundImage: "url('/images/image_primary.webp')", 
+                backgroundSize: "500px", 
+                backgroundPosition: "center",
+                backgroundRepeat: "repeat", 
+                opacity: 0.5,
+                maskImage: 'linear-gradient(to bottom, black 0%, transparent 20%, transparent 80%, black 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 20%, transparent 80%, black 100%)',
+              }}
+            />
+          </div>
+
+          <div className="relative z-10">
             <LearningCenter />
             <HowItWorks />
-            <SiteFooter />
           </div>
+        </div>
+
+        {/* Plain Block 2 (Footer) */}
+        <div className="relative z-10 bg-background">
+          <SiteFooter />
         </div>
       </main>
     </>

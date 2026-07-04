@@ -32,7 +32,7 @@ export function Faq() {
   const [open, setOpen] = useState<number | null>(0)
 
   return (
-    <section id="faq" className="section-texture-parang bg-card py-20 md:py-28">
+    <section id="faq" className="py-20 md:py-28">
       <div className="mx-auto max-w-3xl px-5 md:px-8">
         <ScrollReveal direction="down" className="text-center">
           <p className="text-sm font-semibold uppercase tracking-widest text-terracotta">

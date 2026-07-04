@@ -5,11 +5,6 @@ import { ScanLine, Sparkles } from 'lucide-react'
 export function Hero() {
   return (
     <section className="relative overflow-hidden w-full px-4 pt-16 pb-12 md:px-6 md:pt-20 lg:px-8">
-      {/* Spot 1 Background Pattern */}
-      <div 
-        className="absolute inset-0 z-0 pointer-events-none mix-blend-multiply" 
-        style={{ backgroundImage: "url('/images/image_primary.webp')", backgroundSize: "400px", backgroundRepeat: "repeat", opacity: 0.05 }} 
-      />
 
       {/* Massive Rounded Container */}
       <div className="relative z-10 flex min-h-[85vh] w-full flex-col overflow-hidden rounded-[2.5rem] md:rounded-[3rem] bg-[#3c3836] shadow-2xl">
