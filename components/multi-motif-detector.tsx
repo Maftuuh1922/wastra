@@ -16,6 +16,7 @@ const detections = [
 export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) {
   const [state, setState] = useState<DetectState>('idle')
   const [imageSrc, setImageSrc] = useState<string | null>(null)
+  const [detectionsList, setDetectionsList] = useState(detections)
   const [flashOn, setFlashOn] = useState(false)
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
   
@@ -96,13 +97,20 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
         
         if (!res.ok) throw new Error('API Error')
         
-        const result = await res.json()
-        console.log('Detection Result:', result)
+        const apiResponse = await res.json()
+        console.log('Detection Result:', apiResponse)
+        
+        if (apiResponse.success && apiResponse.detections) {
+            setDetectionsList(apiResponse.detections)
+        } else {
+            setDetectionsList([])
+        }
         
         setState('done')
       } catch (error) {
         console.error('Failed to detect motifs:', error)
-        setState('done') // Fallback to demo mode
+        setDetectionsList(detections) // Fallback to demo mode
+        setState('done')
       }
     }
   }
@@ -166,7 +174,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
             {/* Live Bounding Boxes (Auto Detect) */}
             {state === 'done_live' && (
               <div className="absolute inset-0 pointer-events-none">
-                {detections.map((d, i) => (
+                {detectionsList.map((d, i) => (
                   <div
                     key={i}
                     className="absolute border-2 border-teal transition-all duration-300 pointer-events-none"
@@ -248,7 +256,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
               Hasil Identifikasi
             </p>
             <h2 className="mt-1 font-serif text-2xl font-bold text-foreground">
-              {detections.length} motif terdeteksi
+              {detectionsList.length} motif terdeteksi
             </h2>
           </div>
 
@@ -258,9 +266,9 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
               alt="Foto dengan kotak penanda motif yang terdeteksi"
               className="w-full object-cover max-h-[60vh]"
             />
-            {detections.map((d) => (
+            {detectionsList.map((d, i) => (
               <div
-                key={d.label}
+                key={`${d.label}-${i}`}
                 className="absolute rounded-md border-2 border-teal"
                 style={{
                   left: `${d.x}%`,
@@ -277,9 +285,9 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
           </div>
 
           <ul className="grid gap-3 sm:grid-cols-2">
-            {detections.map((d) => (
+            {detectionsList.map((d, i) => (
               <li
-                key={d.label}
+                key={`${d.label}-${i}`}
                 className="rounded-xl border border-border bg-background p-4"
               >
                 <div className="flex items-center justify-between text-sm">
