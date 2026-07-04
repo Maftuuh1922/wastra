@@ -67,7 +67,7 @@ export function WastraStudioGenerator({ externalPrompt, trigger }: WastraStudioG
   }, [trigger])
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div className="mx-auto w-full max-w-md">
       {state === 'idle' && (
         <div className="flex flex-col items-center justify-center p-10 text-center opacity-70">
           <motion.p 

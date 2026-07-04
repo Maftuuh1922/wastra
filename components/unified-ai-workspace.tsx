@@ -14,7 +14,8 @@ import {
   HelpCircle,
   X,
   Info,
-  Sparkles
+  Sparkles,
+  ArrowUp
 } from 'lucide-react'
 import { ScanCepatUploader } from './scan-cepat-uploader'
 import { MultiMotifDetector } from './multi-motif-detector'
@@ -127,6 +128,14 @@ export function UnifiedAiWorkspace({
             : 'Pindai dan kenali motif batik Anda'}
         </h1>
 
+        {activeModel !== 'multi-motif' && (
+          <p className="text-center text-sm md:text-base text-muted-foreground max-w-xl mx-auto -mt-1 mb-6 md:mb-10 animate-in fade-in slide-in-from-bottom-2">
+            {activeModel === 'wastra-studio' 
+              ? 'Model cerdas (SD + LoRA) ini memungkinkan Anda mengkreasi pola dan gambar batik baru yang unik berdasarkan imajinasi teks Anda.'
+              : 'Model ringan (MobileNetV3) ini dapat mengenali 38 jenis motif batik dominan dari foto kain Anda hanya dalam hitungan detik.'}
+          </p>
+        )}
+
         {/* Dynamic Model View */}
         <div className={`w-full animate-in fade-in zoom-in-95 duration-300 ${
           activeModel === 'multi-motif' ? 'absolute inset-0' : ''
@@ -157,18 +166,34 @@ export function UnifiedAiWorkspace({
           )}
 
           {activeModel === 'wastra-studio' ? (
-            <input
-              type="text"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && prompt.trim()) {
-                  setStudioTrigger((prev) => prev + 1)
-                }
-              }}
-              placeholder="Minta Wastra.ai..."
-              className="mx-2 md:mx-3 flex-1 min-w-0 bg-transparent py-2 md:py-3 text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
-            />
+            <>
+              <input
+                type="text"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && prompt.trim()) {
+                    setStudioTrigger((prev) => prev + 1)
+                    setPrompt('') // Clear prompt after send
+                  }
+                }}
+                placeholder="Ketik imajinasi batik Anda di sini..."
+                className="mx-2 md:mx-3 flex-1 min-w-0 bg-transparent py-2 md:py-3 text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
+              
+              {/* Send Button (Muncul jika ada teks) */}
+              {prompt.trim().length > 0 && (
+                <button 
+                  onClick={() => {
+                    setStudioTrigger((prev) => prev + 1)
+                    setPrompt('') // Clear prompt after send
+                  }}
+                  className="mr-1 md:mr-2 flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-teal text-white hover:bg-teal/90 transition-all shadow-md animate-in zoom-in-90"
+                >
+                  <ArrowUp className="h-4 w-4 md:h-5 md:w-5" />
+                </button>
+              )}
+            </>
           ) : null}
 
           {/* Model Switcher Dropdown */}
