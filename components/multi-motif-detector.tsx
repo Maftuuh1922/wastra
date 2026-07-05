@@ -6,7 +6,7 @@ import { Camera, Loader2, RotateCcw, Zap, ZapOff, SwitchCamera, Scan, Search, Ar
 type DetectState = 'idle' | 'camera_active' | 'analyzing' | 'done_live' | 'camera_error' | 'detail_view'
 
 // Bounding boxes as % of image dimensions (simulated detections)
-const detections = [
+const mockDetections = [
   { label: 'Parang', confidence: 94, x: 25, y: 15, w: 50, h: 70, desc: 'Motif parang memiliki makna petuah untuk tidak pernah menyerah, ibarat ombak laut yang tak pernah berhenti bergerak. Cocok dipakai untuk acara formal dan keseharian.' },
   { label: 'Kawung', confidence: 91, x: 27, y: 8, w: 23, h: 84, desc: 'Motif kawung bermakna kesempurnaan, kemurnian, dan kesucian.' },
 ]
@@ -14,7 +14,8 @@ const detections = [
 export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) {
   const [state, setState] = useState<DetectState>('idle')
   const [imageSrc, setImageSrc] = useState<string | null>(null)
-  const [bestDetection, setBestDetection] = useState(detections[0])
+  const [liveSnapshot, setLiveSnapshot] = useState<string | null>(null)
+  const [bestDetection, setBestDetection] = useState(mockDetections[0])
   const [flashOn, setFlashOn] = useState(false)
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
   
@@ -30,6 +31,52 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     }
   }, [])
 
+  const scanLiveObject = async (video: HTMLVideoElement, canvas: HTMLCanvasElement) => {
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    const dataUrl = canvas.toDataURL('image/png')
+    setLiveSnapshot(dataUrl) // Save snapshot for detail view so bounding box aligns perfectly
+    
+    try {
+      const response = await fetch(dataUrl)
+      const blob = await response.blob()
+      
+      const formData = new FormData()
+      formData.append('image', blob, 'capture.png')
+      
+      const SPACE_URL = 'https://maftuh-main-wastra-yolo-api.hf.space/detect'
+      const res = await fetch(SPACE_URL, {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (!res.ok) throw new Error('API Error')
+      
+      const apiResponse = await res.json()
+      
+      if (apiResponse.success && apiResponse.detections && apiResponse.detections.length > 0) {
+          // Find highest confidence
+          const best = apiResponse.detections.reduce((prev: any, current: any) => {
+              return (prev.confidence > current.confidence) ? prev : current
+          })
+          
+          setBestDetection({
+             ...best,
+             desc: best.desc || 'Batik ini memiliki corak khas yang kaya akan nilai budaya. Mengenali motif ini membantu kita mengapresiasi mahakarya warisan Nusantara.'
+          })
+      }
+    } catch (error) {
+      console.error('Failed to detect motifs:', error)
+      // fallback to mock if fails
+    } finally {
+      setState('done_live')
+    }
+  }
+
   const startCamera = async (mode = 'environment') => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -41,13 +88,11 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       }
       setState('camera_active')
       
-      // Simulate Auto-Detect after 2.5 seconds
+      // Auto-Detect after 2.5 seconds
       setTimeout(() => {
-        if (streamRef.current) {
+        if (streamRef.current && videoRef.current && canvasRef.current) {
           setState('analyzing')
-          setTimeout(() => {
-             setState('done_live')
-          }, 1500)
+          scanLiveObject(videoRef.current, canvasRef.current)
         }
       }, 2500)
     } catch (err) {
@@ -63,29 +108,17 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     }
   }
 
-  const viewDetail = async (det: typeof detections[0]) => {
-    if (!videoRef.current || !canvasRef.current) return
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    
-    // Set canvas dimensions to match video stream
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    
-    const ctx = canvas.getContext('2d')
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      const dataUrl = canvas.toDataURL('image/png')
-      stopCamera()
-      setImageSrc(dataUrl)
-      setBestDetection(det)
-      setState('analyzing')
-      
-      // Simulate API analysis delay before showing detail
-      setTimeout(() => {
-        setState('detail_view')
-      }, 1200)
+  const viewDetail = () => {
+    stopCamera()
+    if (liveSnapshot) {
+      setImageSrc(liveSnapshot)
     }
+    setState('analyzing')
+    
+    // Simulate API analysis delay before showing detail (since we already have the data)
+    setTimeout(() => {
+      setState('detail_view')
+    }, 800)
   }
 
   const toggleCamera = () => {
@@ -106,6 +139,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
 
   const reset = () => {
     setImageSrc(null)
+    setLiveSnapshot(null)
     startCamera() // Restart camera
   }
 
@@ -149,24 +183,21 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                 {/* Single central bounding box */}
                 <div
-                  className="absolute border-2 border-teal transition-all duration-300 pointer-events-none rounded-xl"
+                  className="absolute border-2 border-teal transition-all duration-300 pointer-events-none rounded-xl bg-teal/10 shadow-[inset_0_0_20px_rgba(20,184,166,0.3)]"
                   style={{
-                    left: `${detections[0].x}%`,
-                    top: `${detections[0].y}%`,
-                    width: `${detections[0].w}%`,
-                    height: `${detections[0].h}%`,
-                    boxShadow: '0 0 0 4000px rgba(0,0,0,0.5)', // Darken outside the box to highlight
+                    left: `${bestDetection.x}%`,
+                    top: `${bestDetection.y}%`,
+                    width: `${bestDetection.w}%`,
+                    height: `${bestDetection.h}%`,
                   }}
                 >
+                  {/* Label Button Centered Inside Box */}
                   <button
-                    onClick={() => viewDetail(detections[0])}
-                    className="absolute -bottom-16 left-1/2 -translate-x-1/2 rounded-full bg-white/95 backdrop-blur-sm px-5 py-3 text-sm font-bold text-teal-950 shadow-[0_8px_30px_rgb(0,0,0,0.12)] whitespace-nowrap pointer-events-auto transition-all active:scale-95 cursor-pointer flex items-center gap-3 border border-teal/20 hover:bg-white"
+                    onClick={viewDetail}
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/95 backdrop-blur-sm px-4 py-2 text-sm font-bold text-teal-950 shadow-xl whitespace-nowrap pointer-events-auto transition-all active:scale-95 cursor-pointer flex items-center gap-2 border border-teal/20 hover:bg-white animate-pulse"
                   >
-                    <Search className="w-5 h-5 text-teal" />
-                    <div className="flex flex-col items-start text-left">
-                      <span className="text-xs font-semibold text-muted-foreground leading-none mb-1">Terdeteksi:</span>
-                      <span className="text-base leading-none">{detections[0].label} <span className="opacity-60 font-normal">({detections[0].confidence}%)</span></span>
-                    </div>
+                    <Search className="w-4 h-4 text-teal" />
+                    <span>{bestDetection.label} ({bestDetection.confidence}%)</span>
                     <ArrowRight className="w-4 h-4 ml-1 opacity-50" />
                   </button>
                 </div>
