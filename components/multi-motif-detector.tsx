@@ -15,13 +15,14 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const [state, setState] = useState<DetectState>('idle')
   const [imageSrc, setImageSrc] = useState<string | null>(null)
   const [liveSnapshot, setLiveSnapshot] = useState<string | null>(null)
-  const [bestDetection, setBestDetection] = useState(mockDetections[0])
+  const [bestDetection, setBestDetection] = useState<any>(null)
   const [flashOn, setFlashOn] = useState(false)
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const isScanningRef = useRef<boolean>(false)
 
   // Start camera on mount
   useEffect(() => {
@@ -32,6 +33,8 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   }, [])
 
   const scanLiveObject = async (video: HTMLVideoElement, canvas: HTMLCanvasElement) => {
+    if (!isScanningRef.current) return
+
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
     const ctx = canvas.getContext('2d')
@@ -39,7 +42,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
     const dataUrl = canvas.toDataURL('image/png')
-    setLiveSnapshot(dataUrl) // Save snapshot for detail view so bounding box aligns perfectly
     
     try {
       const response = await fetch(dataUrl)
@@ -59,42 +61,64 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       const apiResponse = await res.json()
       
       if (apiResponse.success && apiResponse.detections && apiResponse.detections.length > 0) {
-          // Find highest confidence
-          const best = apiResponse.detections.reduce((prev: any, current: any) => {
-              return (prev.confidence > current.confidence) ? prev : current
-          })
+          // Filter low confidence to avoid detecting random non-batik objects
+          const validDetections = apiResponse.detections.filter((d: any) => d.confidence >= 50)
           
-          setBestDetection({
-             ...best,
-             desc: best.desc || 'Batik ini memiliki corak khas yang kaya akan nilai budaya. Mengenali motif ini membantu kita mengapresiasi mahakarya warisan Nusantara.'
-          })
+          if (validDetections.length > 0) {
+              const best = validDetections.reduce((prev: any, current: any) => {
+                  return (prev.confidence > current.confidence) ? prev : current
+              })
+              
+              setLiveSnapshot(dataUrl) // Save snapshot of successful detection
+              
+              // Clean up HF label "batik-jawa_barat_megamendung" -> "Jawa Barat Megamendung"
+              let cleanLabel = best.label.replace('batik-', '').replace(/_/g, ' ')
+              cleanLabel = cleanLabel.replace(/\b\w/g, (l: string) => l.toUpperCase())
+
+              setBestDetection({
+                 ...best,
+                 label: cleanLabel,
+                 desc: 'Batik ini memiliki corak khas yang kaya akan nilai budaya. Mengenali motif ini membantu kita mengapresiasi mahakarya warisan Nusantara.'
+              })
+          } else {
+             // Optional: Hide box if nothing detected
+             setBestDetection(null)
+          }
+      } else {
+         setBestDetection(null)
       }
     } catch (error) {
       console.error('Failed to detect motifs:', error)
-      // fallback to mock if fails
     } finally {
-      setState('done_live')
+      // Loop the scan for real-time tracking!
+      if (isScanningRef.current) {
+        setTimeout(() => {
+           if (videoRef.current && canvasRef.current) {
+             scanLiveObject(videoRef.current, canvasRef.current)
+           }
+        }, 1000) // Scan every 1 second
+      }
     }
   }
 
   const startCamera = async (mode = 'environment') => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode } // Prefer rear camera if available
+        video: { facingMode: mode }
       })
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
       }
       setState('camera_active')
+      isScanningRef.current = true
       
-      // Auto-Detect after 2.5 seconds
+      // Auto-Detect loop starts after 1.5 seconds
       setTimeout(() => {
         if (streamRef.current && videoRef.current && canvasRef.current) {
-          setState('analyzing')
           scanLiveObject(videoRef.current, canvasRef.current)
         }
-      }, 2500)
+      }, 1500)
     } catch (err) {
       console.error('Camera access denied or unavailable', err)
       setState('camera_error')
@@ -102,6 +126,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   }
 
   const stopCamera = () => {
+    isScanningRef.current = false
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
       streamRef.current = null
@@ -115,7 +140,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     }
     setState('analyzing')
     
-    // Simulate API analysis delay before showing detail (since we already have the data)
     setTimeout(() => {
       setState('detail_view')
     }, 800)
@@ -140,17 +164,18 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const reset = () => {
     setImageSrc(null)
     setLiveSnapshot(null)
-    startCamera() // Restart camera
+    setBestDetection(null)
+    startCamera()
   }
 
   return (
     <div className="mx-auto w-full h-full">
-      {(state === 'camera_active' || state === 'analyzing' || state === 'done_live') && !imageSrc && (
+      {(state === 'camera_active' || state === 'analyzing') && !imageSrc && (
         <div className="relative w-full h-full">
           <div className="relative w-full h-full bg-black flex items-center justify-center group overflow-hidden">
             
             {/* Camera Controls */}
-            {(state === 'camera_active' || state === 'analyzing' || state === 'done_live') && (
+            {(state === 'camera_active' || state === 'analyzing') && (
               <div className="absolute top-24 right-4 md:right-8 z-20 flex flex-col gap-3">
                 <button onClick={toggleFlash} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg">
                   {flashOn ? <Zap className="h-5 w-5 fill-yellow-400 text-yellow-400" /> : <ZapOff className="h-5 w-5 text-white" />}
@@ -170,20 +195,23 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
               className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
             />
             
-            {/* Scanning overlay animation */}
-            {(state === 'camera_active' || state === 'analyzing') && (
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-teal/0 via-teal/20 to-teal/0 animate-[scan_3s_ease-in-out_infinite]" />
-                <Scan className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-24 text-teal/50 animate-pulse" />
+            {/* Dark overlay specifically outside detection */}
+            {bestDetection && state === 'camera_active' && (
+               <div className="absolute inset-0 bg-black/30 pointer-events-none transition-all duration-500" />
+            )}
+
+            {/* Scanning overlay animation (only when no detection yet) */}
+            {(!bestDetection && state === 'camera_active') && (
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <Scan className="h-24 w-24 text-teal/40 animate-pulse" />
               </div>
             )}
 
             {/* Live Bounding Boxes (Auto Detect) */}
-            {state === 'done_live' && (
+            {(bestDetection && state === 'camera_active') && (
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                {/* Single central bounding box */}
                 <div
-                  className="absolute border-2 border-teal transition-all duration-300 pointer-events-none rounded-xl bg-teal/10 shadow-[inset_0_0_20px_rgba(20,184,166,0.3)]"
+                  className="absolute pointer-events-none transition-all duration-300 ease-out flex flex-col items-center justify-center"
                   style={{
                     left: `${bestDetection.x}%`,
                     top: `${bestDetection.y}%`,
@@ -191,14 +219,23 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
                     height: `${bestDetection.h}%`,
                   }}
                 >
+                  {/* High-tech Scanner Corners */}
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-teal rounded-tl-lg shadow-[0_0_10px_rgba(20,184,166,0.5)]" />
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-teal rounded-tr-lg shadow-[0_0_10px_rgba(20,184,166,0.5)]" />
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-teal rounded-bl-lg shadow-[0_0_10px_rgba(20,184,166,0.5)]" />
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-teal rounded-br-lg shadow-[0_0_10px_rgba(20,184,166,0.5)]" />
+                  
+                  {/* Internal scanner highlight */}
+                  <div className="absolute inset-0 bg-teal/10 mix-blend-screen" />
+
                   {/* Label Button Centered Inside Box */}
                   <button
                     onClick={viewDetail}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/95 backdrop-blur-sm px-4 py-2 text-sm font-bold text-teal-950 shadow-xl whitespace-nowrap pointer-events-auto transition-all active:scale-95 cursor-pointer flex items-center gap-2 border border-teal/20 hover:bg-white animate-pulse"
+                    className="z-10 rounded-full bg-black/70 backdrop-blur-md px-5 py-2.5 text-sm font-bold text-white shadow-2xl whitespace-nowrap pointer-events-auto transition-transform active:scale-95 cursor-pointer flex items-center gap-2 border border-teal/50 hover:bg-black/90 animate-in fade-in zoom-in"
                   >
                     <Search className="w-4 h-4 text-teal" />
                     <span>{bestDetection.label} ({bestDetection.confidence}%)</span>
-                    <ArrowRight className="w-4 h-4 ml-1 opacity-50" />
+                    <ArrowRight className="w-4 h-4 ml-1 opacity-70 text-teal" />
                   </button>
                 </div>
               </div>
