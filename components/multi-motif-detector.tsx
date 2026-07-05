@@ -5,11 +5,17 @@ import { Camera, Loader2, RotateCcw, Zap, ZapOff, SwitchCamera, Scan, Search, Ar
 
 type DetectState = 'idle' | 'camera_active' | 'analyzing' | 'done_live' | 'camera_error' | 'detail_view'
 
-// Bounding boxes as % of image dimensions (simulated detections)
-const mockDetections = [
-  { label: 'Parang', confidence: 94, x: 25, y: 15, w: 50, h: 70, desc: 'Motif parang memiliki makna petuah untuk tidak pernah menyerah, ibarat ombak laut yang tak pernah berhenti bergerak. Cocok dipakai untuk acara formal dan keseharian.' },
-  { label: 'Kawung', confidence: 91, x: 27, y: 8, w: 23, h: 84, desc: 'Motif kawung bermakna kesempurnaan, kemurnian, dan kesucian.' },
-]
+const BATIK_INFO: Record<string, string> = {
+  'batik-aceh': 'Batik Aceh terkenal dengan warna-warna cerah dan motif yang kental dengan nuansa Islami dan alam, seperti pintu Aceh dan tolak angin.',
+  'batik-celup': 'Batik celup (tie-dye) dibuat dengan teknik ikat dan celup. Menghasilkan pola tak beraturan yang unik dan warna yang bergradasi.',
+  'batik-jawa_barat_megamendung': 'Motif Mega Mendung asal Cirebon melambangkan awan pembawa hujan sebagai lambang kesuburan dan pemberi kehidupan.',
+  'batik-gentongan': 'Batik Gentongan asal Madura dibuat dengan merendam kain dalam gentong. Motifnya pesisir dengan warna berani seperti merah dan biru.',
+  'batik-garutan': 'Batik Garutan dari Jawa Barat memiliki ciri khas warna cerah dan motif flora fauna yang sederhana namun elegan.',
+  'batik-parang': 'Motif Parang adalah salah satu motif tertua di Indonesia, melambangkan ombak lautan yang tak pernah berhenti bergerak, simbol pantang menyerah.',
+  'batik-kawung': 'Motif Kawung berbentuk bulat lonjong seperti buah aren, melambangkan kesucian, umur panjang, dan kesempurnaan.',
+  'batik-sogan': 'Batik Sogan khas Solo dan Jogja berwarna kecoklatan. Melambangkan kerendahan hati dan nilai-nilai klasik keraton.',
+  'batik-lasem': 'Batik Lasem merupakan akulturasi budaya Tionghoa dan Jawa, terkenal dengan warna merah darah ayam yang khas.'
+}
 
 export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) {
   const [state, setState] = useState<DetectState>('idle')
@@ -18,8 +24,11 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const [bestDetection, setBestDetection] = useState<any>(null)
   const [flashOn, setFlashOn] = useState(false)
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
+  const [mediaSize, setMediaSize] = useState({ w: 0, h: 0 })
   
   const videoRef = useRef<HTMLVideoElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const isScanningRef = useRef<boolean>(false)
@@ -32,23 +41,85 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     }
   }, [])
 
+  // Continuously track video/image dimensions for accurate bounding box mapping
+  useEffect(() => {
+    const updateSize = () => {
+      if (state === 'camera_active' && videoRef.current) {
+        setMediaSize({ w: videoRef.current.videoWidth, h: videoRef.current.videoHeight })
+      } else if (state === 'detail_view' && imgRef.current) {
+        setMediaSize({ w: imgRef.current.naturalWidth, h: imgRef.current.naturalHeight })
+      }
+    }
+    const interval = setInterval(updateSize, 500)
+    return () => clearInterval(interval)
+  }, [state])
+
+  const calculateBoxStyle = (box: any) => {
+    if (!containerRef.current || mediaSize.w === 0 || mediaSize.h === 0) return { display: 'none' }
+    
+    const cw = containerRef.current.clientWidth
+    const ch = containerRef.current.clientHeight
+    const vw = mediaSize.w
+    const vh = mediaSize.h
+    
+    // Calculate how object-cover scaled the media
+    const scale = Math.max(cw / vw, ch / vh)
+    const visualWidth = vw * scale
+    const visualHeight = vh * scale
+    
+    const offsetLeft = (cw - visualWidth) / 2
+    const offsetTop = (ch - visualHeight) / 2
+
+    // box.x, y, w, h are in percentage of intrinsic media size
+    const pixelX = (box.x / 100) * visualWidth + offsetLeft
+    const pixelY = (box.y / 100) * visualHeight + offsetTop
+    const pixelW = (box.w / 100) * visualWidth
+    const pixelH = (box.h / 100) * visualHeight
+
+    return {
+       left: `${pixelX}px`,
+       top: `${pixelY}px`,
+       width: `${pixelW}px`,
+       height: `${pixelH}px`
+    }
+  }
+
   const scanLiveObject = async (video: HTMLVideoElement, canvas: HTMLCanvasElement) => {
     if (!isScanningRef.current) return
 
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+    const vw = video.videoWidth
+    const vh = video.videoHeight
+    if (!vw || !vh) {
+       setTimeout(() => scanLiveObject(video, canvas), 500)
+       return
+    }
+
+    // Scale down to 640px max to prevent UI freezing (canvas sync operations)
+    // and speed up network upload.
+    const MAX_SIZE = 640
+    let drawW = vw
+    let drawH = vh
+    if (drawW > MAX_SIZE || drawH > MAX_SIZE) {
+       const ratio = Math.min(MAX_SIZE / drawW, MAX_SIZE / drawH)
+       drawW = drawW * ratio
+       drawH = drawH * ratio
+    }
+
+    canvas.width = drawW
+    canvas.height = drawH
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-    const dataUrl = canvas.toDataURL('image/png')
+    ctx.drawImage(video, 0, 0, drawW, drawH)
+    // Use JPEG format for massive speedup over PNG, prevents UI freeze
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8) 
     
     try {
       const response = await fetch(dataUrl)
       const blob = await response.blob()
       
       const formData = new FormData()
-      formData.append('image', blob, 'capture.png')
+      formData.append('image', blob, 'capture.jpg')
       
       const SPACE_URL = 'https://maftuh-main-wastra-yolo-api.hf.space/predict'
       const res = await fetch(SPACE_URL, {
@@ -69,19 +140,24 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
                   return (prev.confidence > current.confidence) ? prev : current
               })
               
-              setLiveSnapshot(dataUrl) // Save snapshot of successful detection
+              // Full-res snapshot for detail view
+              const fullCanvas = document.createElement('canvas')
+              fullCanvas.width = vw
+              fullCanvas.height = vh
+              fullCanvas.getContext('2d')?.drawImage(video, 0, 0, vw, vh)
+              setLiveSnapshot(fullCanvas.toDataURL('image/jpeg', 0.9))
               
-              // Clean up HF label "batik-jawa_barat_megamendung" -> "Jawa Barat Megamendung"
+              const rawLabel = best.label.toLowerCase()
               let cleanLabel = best.label.replace('batik-', '').replace(/_/g, ' ')
               cleanLabel = cleanLabel.replace(/\b\w/g, (l: string) => l.toUpperCase())
+              const desc = BATIK_INFO[rawLabel] || 'Batik ini memiliki corak khas yang kaya akan nilai budaya warisan Nusantara.'
 
               setBestDetection({
                  ...best,
                  label: cleanLabel,
-                 desc: 'Batik ini memiliki corak khas yang kaya akan nilai budaya. Mengenali motif ini membantu kita mengapresiasi mahakarya warisan Nusantara.'
+                 desc: desc
               })
           } else {
-             // Optional: Hide box if nothing detected
              setBestDetection(null)
           }
       } else {
@@ -90,13 +166,13 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     } catch (error) {
       console.error('Failed to detect motifs:', error)
     } finally {
-      // Loop the scan for real-time tracking!
+      // Loop the scan for real-time tracking! Fast 500ms interval since we optimized payload
       if (isScanningRef.current) {
         setTimeout(() => {
            if (videoRef.current && canvasRef.current) {
              scanLiveObject(videoRef.current, canvasRef.current)
            }
-        }, 1000) // Scan every 1 second
+        }, 500) 
       }
     }
   }
@@ -113,12 +189,12 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       setState('camera_active')
       isScanningRef.current = true
       
-      // Auto-Detect loop starts after 1.5 seconds
+      // Auto-Detect loop starts shortly after camera
       setTimeout(() => {
         if (streamRef.current && videoRef.current && canvasRef.current) {
           scanLiveObject(videoRef.current, canvasRef.current)
         }
-      }, 1500)
+      }, 1000)
     } catch (err) {
       console.error('Camera access denied or unavailable', err)
       setState('camera_error')
@@ -172,7 +248,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     <div className="mx-auto w-full h-full">
       {(state === 'camera_active' || state === 'analyzing') && !imageSrc && (
         <div className="relative w-full h-full">
-          <div className="relative w-full h-full bg-black flex items-center justify-center group overflow-hidden">
+          <div ref={containerRef} className="relative w-full h-full bg-black flex items-center justify-center group overflow-hidden">
             
             {/* Camera Controls */}
             {(state === 'camera_active' || state === 'analyzing') && (
@@ -209,15 +285,10 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
 
             {/* Live Bounding Boxes (Auto Detect) */}
             {(bestDetection && state === 'camera_active') && (
-              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div
                   className="absolute pointer-events-none transition-all duration-300 ease-out flex flex-col items-center justify-center"
-                  style={{
-                    left: `${bestDetection.x}%`,
-                    top: `${bestDetection.y}%`,
-                    width: `${bestDetection.w}%`,
-                    height: `${bestDetection.h}%`,
-                  }}
+                  style={calculateBoxStyle(bestDetection)}
                 >
                   {/* High-tech Scanner Corners */}
                   <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-teal rounded-tl-lg shadow-[0_0_10px_rgba(20,184,166,0.5)]" />
@@ -300,35 +371,33 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
              <X className="w-5 h-5" />
           </button>
 
-          <div className="relative w-full h-64 md:h-80 bg-black">
+          <div ref={containerRef} className="relative w-full h-64 md:h-80 bg-black overflow-hidden">
             <img
+              ref={imgRef}
               src={imageSrc || '/placeholder.svg'}
-              alt={`Foto batik ${bestDetection.label}`}
+              alt={`Foto batik ${bestDetection?.label}`}
               className="w-full h-full object-cover opacity-90"
             />
-            {/* Overlay bounding box on static image */}
-            <div
-              className="absolute border-2 border-gold rounded-lg shadow-[0_0_0_4000px_rgba(0,0,0,0.5)]"
-              style={{
-                left: `${bestDetection.x}%`,
-                top: `${bestDetection.y}%`,
-                width: `${bestDetection.w}%`,
-                height: `${bestDetection.h}%`,
-              }}
-            />
+            {/* Overlay bounding box on static image matching object-cover scale */}
+            {bestDetection && (
+               <div
+                 className="absolute border-2 border-gold rounded-lg shadow-[0_0_0_4000px_rgba(0,0,0,0.5)] transition-all duration-300"
+                 style={calculateBoxStyle(bestDetection)}
+               />
+            )}
           </div>
 
           <div className="p-6 md:p-8 flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <span className="bg-teal/10 text-teal px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Tingkat Kecocokan {bestDetection.confidence}%</span>
+              <span className="bg-teal/10 text-teal px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Tingkat Kecocokan {bestDetection?.confidence || 0}%</span>
             </div>
             
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground">
-              Batik {bestDetection.label}
+              Batik {bestDetection?.label}
             </h2>
             
             <p className="text-muted-foreground leading-relaxed text-base md:text-lg">
-              {bestDetection.desc}
+              {bestDetection?.desc}
             </p>
             
             <div className="mt-4 pt-6 border-t border-border flex items-center justify-between">
@@ -351,4 +420,3 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     </div>
   )
 }
-
