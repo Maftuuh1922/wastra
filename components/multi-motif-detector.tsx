@@ -48,7 +48,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       const formData = new FormData()
       formData.append('image', blob, 'capture.png')
       
-      const SPACE_URL = 'https://maftuh-main-wastra-yolo-api.hf.space/detect'
+      const SPACE_URL = 'https://maftuh-main-wastra-yolo-api.hf.space/predict'
       const res = await fetch(SPACE_URL, {
         method: 'POST',
         body: formData
