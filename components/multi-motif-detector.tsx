@@ -66,17 +66,18 @@ const CONFIG = {
   SCAN_INTERVAL_BACKOFF_MS: 1500, // slower polling while the API is failing
   // A single low-confidence frame should never be enough to label something.
   // A detection must survive this many *consecutive* frames before it's shown.
-  STABLE_FRAMES_REQUIRED: 3,
+  // 2 (bukan 3) karena API di HF Space lambat (~1-2s per frame); syarat 3
+  // frame berturut-turut sering memutus streak deteksi yang sebenarnya valid.
+  STABLE_FRAMES_REQUIRED: 2,
   // How many frames a tracked object is allowed to "disappear" for before
   // we drop it (keeps boxes from flickering when a frame is missed/slow).
   MISS_TOLERANCE_FRAMES: 4,
   // Baseline confidence needed to even consider a detection.
-  CONFIDENCE_THRESHOLD: 80,
-  // Full-frame boxes were the main source of false positives (the model
-  // saying "the whole picture is batik" for random objects/textures).
-  // Boxes that cover almost the entire frame need extra confidence.
-  SUSPICIOUS_BOX_AREA_RATIO: 0.85,
-  FULLFRAME_CONFIDENCE_THRESHOLD: 96,
+  // Penolakan objek non-batik sekarang dilakukan oleh MODEL (kelas
+  // "bukan_batik" di sisi API), bukan lagi oleh heuristik ukuran box di FE.
+  CONFIDENCE_THRESHOLD: 60,
+  // Label kelas negatif dari model — tidak boleh pernah ditampilkan.
+  NEGATIVE_LABEL: 'bukan_batik',
   MAX_SIMULTANEOUS_DETECTIONS: 6,
   MAX_CONSECUTIVE_ERRORS: 6,
 } as const
@@ -321,13 +322,13 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       setNetworkIssue(false)
 
       const rawDetections: RawDetection[] = Array.isArray(apiResponse?.detections) ? apiResponse.detections : []
-      const candidates = rawDetections.filter((d) => {
-        const areaRatio = (d.w / 100) * (d.h / 100)
-        const requiredConfidence = areaRatio > CONFIG.SUSPICIOUS_BOX_AREA_RATIO
-          ? CONFIG.FULLFRAME_CONFIDENCE_THRESHOLD
-          : CONFIG.CONFIDENCE_THRESHOLD
-        return d.confidence >= requiredConfidence
-      })
+      // Model klasifikasi baru sengaja mengembalikan box full-frame, jadi
+      // heuristik "box besar = mencurigakan" yang lama justru membuang
+      // prediksi yang benar. Penolakan objek acak kini ditangani model
+      // lewat kelas "bukan_batik".
+      const candidates = rawDetections.filter(
+        (d) => d.label !== CONFIG.NEGATIVE_LABEL && d.confidence >= CONFIG.CONFIDENCE_THRESHOLD,
+      )
 
       tracksRef.current = updateTracks(tracksRef.current, candidates)
       setTracks(tracksRef.current)
