@@ -73,10 +73,27 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     const offsetLeft = (cw - visualWidth) / 2
     const offsetTop = (ch - visualHeight) / 2
 
-    const pixelX = (box.x / 100) * visualWidth + offsetLeft
-    const pixelY = (box.y / 100) * visualHeight + offsetTop
-    const pixelW = (box.w / 100) * visualWidth
-    const pixelH = (box.h / 100) * visualHeight
+    let pixelX = (box.x / 100) * visualWidth + offsetLeft
+    let pixelY = (box.y / 100) * visualHeight + offsetTop
+    let pixelW = (box.w / 100) * visualWidth
+    let pixelH = (box.h / 100) * visualHeight
+
+    // Clamp to screen bounds so glowing corners never get hidden outside the phone screen
+    const PADDING = 16
+    if (pixelX < PADDING) { 
+       pixelW -= (PADDING - pixelX)
+       pixelX = PADDING 
+    }
+    if (pixelY < PADDING) { 
+       pixelH -= (PADDING - pixelY)
+       pixelY = PADDING 
+    }
+    if (pixelX + pixelW > cw - PADDING) { 
+       pixelW = (cw - PADDING) - pixelX 
+    }
+    if (pixelY + pixelH > ch - PADDING) { 
+       pixelH = (ch - PADDING) - pixelY 
+    }
 
     return {
        left: `${pixelX}px`,
