@@ -32,6 +32,10 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const streamRef = useRef<MediaStream | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const isScanningRef = useRef<boolean>(false)
+  
+  // Tracking references for stabilization
+  const missCountRef = useRef<number>(0)
+  const lastDetectionRef = useRef<any>(null)
 
   // Start camera on mount
   useEffect(() => {
@@ -50,7 +54,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
         setMediaSize({ w: imgRef.current.naturalWidth, h: imgRef.current.naturalHeight })
       }
     }
-    const interval = setInterval(updateSize, 500)
+    const interval = setInterval(updateSize, 200) // faster size sync
     return () => clearInterval(interval)
   }, [state])
 
@@ -62,7 +66,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     const vw = mediaSize.w
     const vh = mediaSize.h
     
-    // Calculate how object-cover scaled the media
     const scale = Math.max(cw / vw, ch / vh)
     const visualWidth = vw * scale
     const visualHeight = vh * scale
@@ -70,7 +73,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     const offsetLeft = (cw - visualWidth) / 2
     const offsetTop = (ch - visualHeight) / 2
 
-    // box.x, y, w, h are in percentage of intrinsic media size
     const pixelX = (box.x / 100) * visualWidth + offsetLeft
     const pixelY = (box.y / 100) * visualHeight + offsetTop
     const pixelW = (box.w / 100) * visualWidth
@@ -90,11 +92,12 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     const vw = video.videoWidth
     const vh = video.videoHeight
     if (!vw || !vh) {
-       setTimeout(() => scanLiveObject(video, canvas), 500)
+       setTimeout(() => scanLiveObject(video, canvas), 200)
        return
     }
 
-    const MAX_SIZE = 640
+    // Shrink size heavily to make upload lighting fast (YOLO uses 416/640 anyway)
+    const MAX_SIZE = 416 
     let drawW = vw
     let drawH = vh
     if (drawW > MAX_SIZE || drawH > MAX_SIZE) {
@@ -109,7 +112,8 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     if (!ctx) return
     
     ctx.drawImage(video, 0, 0, drawW, drawH)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.8) 
+    // Extra compression for extreme speed (0.6 is virtually indistinguishable to YOLO)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.6) 
     
     try {
       const response = await fetch(dataUrl)
@@ -129,13 +133,22 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       const apiResponse = await res.json()
       
       if (apiResponse.success && apiResponse.detections && apiResponse.detections.length > 0) {
-          const validDetections = apiResponse.detections.filter((d: any) => d.confidence >= 50)
+          // VERY STRICT confidence threshold to prevent FALSE POSITIVES (detecting wrong batiks)
+          const validDetections = apiResponse.detections.filter((d: any) => d.confidence >= 70)
           
           if (validDetections.length > 0) {
               const best = validDetections.reduce((prev: any, current: any) => {
                   return (prev.confidence > current.confidence) ? prev : current
               })
               
+              // STABILIZATION: Prevent flickering/jumping classes
+              if (lastDetectionRef.current && lastDetectionRef.current.label !== best.label) {
+                 // If the class changed, only accept it if it's REALLY sure (> 75)
+                 if (best.confidence < 75) {
+                    throw new Error('Ignore low confidence class switch')
+                 }
+              }
+
               const fullCanvas = document.createElement('canvas')
               fullCanvas.width = vw
               fullCanvas.height = vh
@@ -145,37 +158,61 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
               const rawLabel = best.label.toLowerCase()
               let cleanLabel = best.label.replace('batik-', '').replace(/_/g, ' ')
               cleanLabel = cleanLabel.replace(/\b\w/g, (l: string) => l.toUpperCase())
-              const desc = BATIK_INFO[rawLabel] || 'Batik ini memiliki corak khas yang kaya akan nilai budaya warisan Nusantara.'
+              const desc = BATIK_INFO[rawLabel] || 'Batik ini memiliki corak unik Nusantara.'
 
-              setBestDetection({
+              const newDetection = {
                  ...best,
                  label: cleanLabel,
                  desc: desc
-              })
+              }
+
+              lastDetectionRef.current = newDetection
+              setBestDetection(newDetection)
+              missCountRef.current = 0 // Reset miss counter
           } else {
-             setBestDetection(null)
+             handleMiss()
           }
       } else {
-         setBestDetection(null)
+         handleMiss()
       }
     } catch (error) {
-      console.error('Failed to detect motifs:', error)
+      // Ignore API errors, treat as miss
+      handleMiss()
     } finally {
       if (isScanningRef.current) {
+        // Almost instant loop! Wait only 50ms before grabbing next frame
         setTimeout(() => {
            if (videoRef.current && canvasRef.current) {
              scanLiveObject(videoRef.current, canvasRef.current)
            }
-        }, 500) 
+        }, 50) 
       }
+    }
+  }
+
+  const handleMiss = () => {
+    missCountRef.current += 1
+    // Keep bounding box alive for 4 frames (around 1-2 seconds) to prevent flickering!
+    if (missCountRef.current > 4) {
+       setBestDetection(null)
+       lastDetectionRef.current = null
     }
   }
 
   const startCamera = async (mode = 'environment') => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode }
-      })
+      const constraints: any = { facingMode: mode }
+      // Attempt to force continuous auto-focus on supported mobile browsers
+      constraints.advanced = [{ focusMode: "continuous" }]
+      
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: constraints })
+      } catch (e) {
+        // Fallback without advanced constraints if device rejects it
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } })
+      }
+
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
@@ -187,7 +224,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
         if (streamRef.current && videoRef.current && canvasRef.current) {
           scanLiveObject(videoRef.current, canvasRef.current)
         }
-      }, 1000)
+      }, 500)
     } catch (err) {
       console.error('Camera access denied or unavailable', err)
       setState('camera_error')
@@ -234,21 +271,40 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     setImageSrc(null)
     setLiveSnapshot(null)
     setBestDetection(null)
+    lastDetectionRef.current = null
+    missCountRef.current = 0
     startCamera()
   }
 
-  // Placeholder height to maintain document flow when fixed fullscreen is active
+  // Refocus click handler for iOS/Android
+  const handleTapToFocus = async () => {
+     if (streamRef.current) {
+        const track = streamRef.current.getVideoTracks()[0]
+        const capabilities: any = track.getCapabilities ? track.getCapabilities() : {}
+        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+           try {
+              await track.applyConstraints({
+                 advanced: [{ focusMode: 'continuous' }]
+              })
+              // Visual feedback could be added here
+           } catch (e) {
+              console.warn("Focus failed", e)
+           }
+        }
+     }
+  }
+
   return (
     <div className="w-full h-[500px]">
       {(state === 'camera_active' || state === 'analyzing') && !imageSrc && (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col animate-in fade-in duration-300">
           
           {/* Header Bar */}
-          <div className="absolute top-0 left-0 w-full p-4 md:p-6 z-20 flex justify-between items-center bg-gradient-to-b from-black/70 to-transparent">
-             <button onClick={handleFallback} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg border border-white/10">
+          <div className="absolute top-0 left-0 w-full p-4 md:p-6 z-20 flex justify-between items-center bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
+             <button onClick={handleFallback} className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg border border-white/10">
                 <X className="h-6 w-6" />
              </button>
-             <div className="flex gap-3">
+             <div className="flex gap-3 pointer-events-auto">
                 <button onClick={toggleFlash} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg border border-white/10">
                   {flashOn ? <Zap className="h-5 w-5 fill-yellow-400 text-yellow-400" /> : <ZapOff className="h-5 w-5 text-white" />}
                 </button>
@@ -258,7 +314,11 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
              </div>
           </div>
 
-          <div ref={containerRef} className="relative flex-1 w-full bg-black flex items-center justify-center overflow-hidden">
+          <div 
+             ref={containerRef} 
+             className="relative flex-1 w-full bg-black flex items-center justify-center overflow-hidden cursor-crosshair"
+             onClick={handleTapToFocus}
+          >
             <video 
               ref={videoRef}
               autoPlay
@@ -283,7 +343,8 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
             {(bestDetection && state === 'camera_active') && (
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div
-                  className="absolute pointer-events-none transition-all duration-300 ease-out flex flex-col items-center justify-center"
+                  // duration-500 makes the box glide smoothly across the screen like real-time tracking!
+                  className="absolute pointer-events-none transition-all duration-500 ease-out flex flex-col items-center justify-center"
                   style={calculateBoxStyle(bestDetection)}
                 >
                   <div className="absolute top-0 left-0 w-10 h-10 border-t-[4px] border-l-[4px] border-teal rounded-tl-xl shadow-[0_0_15px_rgba(20,184,166,0.6)]" />
@@ -310,7 +371,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
           {/* Footer Bar */}
           <div className="w-full bg-black p-6 text-center z-20 pb-safe">
              <p className="text-white/60 text-sm font-medium tracking-wide">
-               Arahkan kamera ke motif batik untuk dipindai
+               Ketuk layar untuk fokus • Arahkan kamera ke motif batik
              </p>
           </div>
         </div>
