@@ -25,6 +25,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const [flashOn, setFlashOn] = useState(false)
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
   const [mediaSize, setMediaSize] = useState({ w: 0, h: 0 })
+  const [focusPoint, setFocusPoint] = useState<{x: number, y: number} | null>(null)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
@@ -218,16 +219,23 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
 
   const startCamera = async (mode = 'environment') => {
     try {
-      const constraints: any = { facingMode: mode }
-      // Attempt to force continuous auto-focus on supported mobile browsers
-      constraints.advanced = [{ focusMode: "continuous" }]
+      // Force ideal 1080p to coax the browser into selecting the primary wide lens 
+      // (which has better hardware auto-focus than ultra-wide lenses on mobile)
+      const baseConstraints = { 
+        facingMode: mode,
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
       
       let stream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: constraints })
+        // Attempt to force continuous auto-focus on supported mobile browsers
+        stream = await navigator.mediaDevices.getUserMedia({ 
+           video: { ...baseConstraints, advanced: [{ focusMode: "continuous" }] } as any
+        })
       } catch (e) {
         // Fallback without advanced constraints if device rejects it
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } })
+        stream = await navigator.mediaDevices.getUserMedia({ video: baseConstraints })
       }
 
       streamRef.current = stream
@@ -294,7 +302,14 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   }
 
   // Refocus click handler for iOS/Android
-  const handleTapToFocus = async () => {
+  const handleTapToFocus = async (e: React.MouseEvent) => {
+     // visual feedback
+     const rect = e.currentTarget.getBoundingClientRect()
+     const x = e.clientX - rect.left
+     const y = e.clientY - rect.top
+     setFocusPoint({x, y})
+     setTimeout(() => setFocusPoint(null), 1000)
+
      if (streamRef.current) {
         const track = streamRef.current.getVideoTracks()[0]
         const capabilities: any = track.getCapabilities ? track.getCapabilities() : {}
@@ -303,10 +318,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
               await track.applyConstraints({
                  advanced: [{ focusMode: 'continuous' }]
               })
-              // Visual feedback could be added here
-           } catch (e) {
-              console.warn("Focus failed", e)
-           }
+           } catch (err) {}
         }
      }
   }
@@ -344,6 +356,14 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
               className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
             />
             
+            {/* Visual Focus Ring */}
+            {focusPoint && (
+               <div 
+                 className="absolute w-20 h-20 border-2 border-yellow-400 rounded-lg pointer-events-none animate-in zoom-in-150 fade-in duration-300"
+                 style={{ left: focusPoint.x - 40, top: focusPoint.y - 40 }}
+               />
+            )}
+
             {/* Dimmed Background Overlay */}
             {bestDetection && state === 'camera_active' && (
                <div className="absolute inset-0 bg-black/40 pointer-events-none transition-colors duration-500" />
@@ -387,8 +407,8 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
           
           {/* Footer Bar */}
           <div className="w-full bg-black p-6 text-center z-20 pb-safe">
-             <p className="text-white/60 text-sm font-medium tracking-wide">
-               Ketuk layar untuk fokus • Arahkan kamera ke motif batik
+             <p className="text-white/80 text-sm font-medium tracking-wide">
+               Ketuk layar untuk fokus • Beri jarak ~15cm dari motif
              </p>
           </div>
         </div>
