@@ -94,8 +94,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
        return
     }
 
-    // Scale down to 640px max to prevent UI freezing (canvas sync operations)
-    // and speed up network upload.
     const MAX_SIZE = 640
     let drawW = vw
     let drawH = vh
@@ -111,7 +109,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     if (!ctx) return
     
     ctx.drawImage(video, 0, 0, drawW, drawH)
-    // Use JPEG format for massive speedup over PNG, prevents UI freeze
     const dataUrl = canvas.toDataURL('image/jpeg', 0.8) 
     
     try {
@@ -132,7 +129,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       const apiResponse = await res.json()
       
       if (apiResponse.success && apiResponse.detections && apiResponse.detections.length > 0) {
-          // Filter low confidence to avoid detecting random non-batik objects
           const validDetections = apiResponse.detections.filter((d: any) => d.confidence >= 50)
           
           if (validDetections.length > 0) {
@@ -140,7 +136,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
                   return (prev.confidence > current.confidence) ? prev : current
               })
               
-              // Full-res snapshot for detail view
               const fullCanvas = document.createElement('canvas')
               fullCanvas.width = vw
               fullCanvas.height = vh
@@ -166,7 +161,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     } catch (error) {
       console.error('Failed to detect motifs:', error)
     } finally {
-      // Loop the scan for real-time tracking! Fast 500ms interval since we optimized payload
       if (isScanningRef.current) {
         setTimeout(() => {
            if (videoRef.current && canvasRef.current) {
@@ -189,7 +183,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       setState('camera_active')
       isScanningRef.current = true
       
-      // Auto-Detect loop starts shortly after camera
       setTimeout(() => {
         if (streamRef.current && videoRef.current && canvasRef.current) {
           scanLiveObject(videoRef.current, canvasRef.current)
@@ -244,25 +237,28 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     startCamera()
   }
 
+  // Placeholder height to maintain document flow when fixed fullscreen is active
   return (
-    <div className="mx-auto w-full h-full">
+    <div className="w-full h-[500px]">
       {(state === 'camera_active' || state === 'analyzing') && !imageSrc && (
-        <div className="relative w-full h-full">
-          <div ref={containerRef} className="relative w-full h-full bg-black flex items-center justify-center group overflow-hidden">
-            
-            {/* Camera Controls */}
-            {(state === 'camera_active' || state === 'analyzing') && (
-              <div className="absolute top-24 right-4 md:right-8 z-20 flex flex-col gap-3">
-                <button onClick={toggleFlash} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg">
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col animate-in fade-in duration-300">
+          
+          {/* Header Bar */}
+          <div className="absolute top-0 left-0 w-full p-4 md:p-6 z-20 flex justify-between items-center bg-gradient-to-b from-black/70 to-transparent">
+             <button onClick={handleFallback} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg border border-white/10">
+                <X className="h-6 w-6" />
+             </button>
+             <div className="flex gap-3">
+                <button onClick={toggleFlash} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg border border-white/10">
                   {flashOn ? <Zap className="h-5 w-5 fill-yellow-400 text-yellow-400" /> : <ZapOff className="h-5 w-5 text-white" />}
                 </button>
-                <button onClick={toggleCamera} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg">
+                <button onClick={toggleCamera} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg border border-white/10">
                   <SwitchCamera className="h-5 w-5 text-white" />
                 </button>
-              </div>
-            )}
+             </div>
+          </div>
 
-            {/* Live Video Feed */}
+          <div ref={containerRef} className="relative flex-1 w-full bg-black flex items-center justify-center overflow-hidden">
             <video 
               ref={videoRef}
               autoPlay
@@ -271,56 +267,57 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
               className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
             />
             
-            {/* Dark overlay specifically outside detection */}
+            {/* Dimmed Background Overlay */}
             {bestDetection && state === 'camera_active' && (
-               <div className="absolute inset-0 bg-black/30 pointer-events-none transition-all duration-500" />
+               <div className="absolute inset-0 bg-black/40 pointer-events-none transition-colors duration-500" />
             )}
 
-            {/* Scanning overlay animation (only when no detection yet) */}
+            {/* Empty Scanning Animation */}
             {(!bestDetection && state === 'camera_active') && (
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                 <Scan className="h-24 w-24 text-teal/40 animate-pulse" />
               </div>
             )}
 
-            {/* Live Bounding Boxes (Auto Detect) */}
+            {/* YOLO Bounding Box */}
             {(bestDetection && state === 'camera_active') && (
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div
                   className="absolute pointer-events-none transition-all duration-300 ease-out flex flex-col items-center justify-center"
                   style={calculateBoxStyle(bestDetection)}
                 >
-                  {/* High-tech Scanner Corners */}
-                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-teal rounded-tl-lg shadow-[0_0_10px_rgba(20,184,166,0.5)]" />
-                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-teal rounded-tr-lg shadow-[0_0_10px_rgba(20,184,166,0.5)]" />
-                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-teal rounded-bl-lg shadow-[0_0_10px_rgba(20,184,166,0.5)]" />
-                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-teal rounded-br-lg shadow-[0_0_10px_rgba(20,184,166,0.5)]" />
+                  <div className="absolute top-0 left-0 w-10 h-10 border-t-[4px] border-l-[4px] border-teal rounded-tl-xl shadow-[0_0_15px_rgba(20,184,166,0.6)]" />
+                  <div className="absolute top-0 right-0 w-10 h-10 border-t-[4px] border-r-[4px] border-teal rounded-tr-xl shadow-[0_0_15px_rgba(20,184,166,0.6)]" />
+                  <div className="absolute bottom-0 left-0 w-10 h-10 border-b-[4px] border-l-[4px] border-teal rounded-bl-xl shadow-[0_0_15px_rgba(20,184,166,0.6)]" />
+                  <div className="absolute bottom-0 right-0 w-10 h-10 border-b-[4px] border-r-[4px] border-teal rounded-br-xl shadow-[0_0_15px_rgba(20,184,166,0.6)]" />
                   
-                  {/* Internal scanner highlight */}
                   <div className="absolute inset-0 bg-teal/10 mix-blend-screen" />
 
-                  {/* Label Button Centered Inside Box */}
                   <button
                     onClick={viewDetail}
-                    className="z-10 rounded-full bg-black/70 backdrop-blur-md px-5 py-2.5 text-sm font-bold text-white shadow-2xl whitespace-nowrap pointer-events-auto transition-transform active:scale-95 cursor-pointer flex items-center gap-2 border border-teal/50 hover:bg-black/90 animate-in fade-in zoom-in"
+                    className="z-10 rounded-full bg-black/80 backdrop-blur-xl px-6 py-3 text-sm md:text-base font-bold text-white shadow-2xl whitespace-nowrap pointer-events-auto transition-transform active:scale-95 cursor-pointer flex items-center gap-2 border border-teal hover:bg-black"
                   >
-                    <Search className="w-4 h-4 text-teal" />
+                    <Search className="w-5 h-5 text-teal" />
                     <span>{bestDetection.label} ({bestDetection.confidence}%)</span>
-                    <ArrowRight className="w-4 h-4 ml-1 opacity-70 text-teal" />
+                    <ArrowRight className="w-5 h-5 ml-1 opacity-70 text-teal" />
                   </button>
                 </div>
               </div>
             )}
-
-            {/* Hidden canvas for capturing frame */}
             <canvas ref={canvasRef} className="hidden" />
-
+          </div>
+          
+          {/* Footer Bar */}
+          <div className="w-full bg-black p-6 text-center z-20 pb-safe">
+             <p className="text-white/60 text-sm font-medium tracking-wide">
+               Arahkan kamera ke motif batik untuk dipindai
+             </p>
           </div>
         </div>
       )}
 
       {(state === 'idle' || state === 'camera_error') && (
-        <div className="flex flex-col items-center justify-center gap-6 rounded-3xl border border-border bg-card/60 px-6 py-24 text-center transition-all hover:bg-card hover:shadow-md">
+        <div className="flex flex-col items-center justify-center h-full gap-6 rounded-3xl border border-border bg-card/60 px-6 py-24 text-center transition-all hover:bg-card hover:shadow-md">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-teal/10">
               <Camera className="h-10 w-10 text-teal" aria-hidden="true" />
             </div>
@@ -334,14 +331,14 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
                   onClick={handleFallback}
                   className="rounded-full bg-teal px-6 py-3 text-sm font-semibold text-white hover:bg-teal/90"
                 >
-                  Gunakan Fitur Scan Cepat
+                  Ganti Mode Scan
                 </button>
                 <button
                   type="button"
                   onClick={() => startCamera(facingMode)}
                   className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                 >
-                  Coba aktifkan kamera lagi
+                  Coba kamera lagi
                 </button>
               </div>
             )}
@@ -349,70 +346,93 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       )}
 
       {state === 'analyzing' && imageSrc && (
-        <div className="flex flex-col items-center gap-5 rounded-3xl border border-border bg-card p-8 aspect-video w-full justify-center">
+        <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-8 animate-in fade-in duration-300">
           <img
             src={imageSrc || '/placeholder.svg'}
             alt="Foto yang sedang dianalisis"
-            className="max-h-64 rounded-xl object-cover opacity-50"
+            className="w-48 h-48 md:w-64 md:h-64 rounded-3xl object-cover opacity-60 shadow-2xl mb-8"
           />
-          <div className="flex items-center gap-3 text-teal">
-            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-            <p className="text-sm font-medium">
-              Memproses dan mengenali detail batik{'\u2026'}
+          <div className="flex flex-col items-center gap-4 text-teal">
+            <Loader2 className="h-10 w-10 animate-spin" aria-hidden="true" />
+            <p className="text-lg font-bold tracking-wide">
+              Menganalisis Pola Motif{'\u2026'}
             </p>
           </div>
         </div>
       )}
 
       {state === 'detail_view' && imageSrc && (
-        <div className="flex flex-col gap-0 overflow-hidden rounded-3xl border border-border bg-card shadow-lg animate-in zoom-in-95 duration-300 relative">
+        <div className="fixed inset-0 z-[100] flex flex-col bg-background animate-in slide-in-from-bottom-12 fade-in duration-500 overflow-hidden">
           
-          <button onClick={reset} className="absolute top-4 right-4 z-10 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white backdrop-blur-sm transition-colors shadow-lg">
-             <X className="w-5 h-5" />
-          </button>
-
-          <div ref={containerRef} className="relative w-full h-64 md:h-80 bg-black overflow-hidden">
+          {/* Header Image Area */}
+          <div ref={containerRef} className="relative w-full h-[50vh] md:h-[60vh] shrink-0 bg-black shadow-2xl">
             <img
               ref={imgRef}
               src={imageSrc || '/placeholder.svg'}
               alt={`Foto batik ${bestDetection?.label}`}
               className="w-full h-full object-cover opacity-90"
             />
+            
+            {/* Close / Back Button */}
+            <button onClick={reset} className="absolute top-6 left-6 z-20 p-3 bg-black/50 hover:bg-black/80 rounded-full text-white backdrop-blur-md transition-all shadow-lg active:scale-90 border border-white/10">
+               <X className="w-6 h-6" />
+            </button>
+
             {/* Overlay bounding box on static image matching object-cover scale */}
             {bestDetection && (
                <div
-                 className="absolute border-2 border-gold rounded-lg shadow-[0_0_0_4000px_rgba(0,0,0,0.5)] transition-all duration-300"
+                 className="absolute border-[3px] border-teal rounded-xl shadow-[0_0_20px_rgba(20,184,166,0.6)] transition-all duration-300 pointer-events-none"
                  style={calculateBoxStyle(bestDetection)}
-               />
+               >
+                  <div className="absolute inset-0 bg-teal/10 mix-blend-screen rounded-xl" />
+                  <div className="absolute -top-1 -left-1 w-6 h-6 border-t-[3px] border-l-[3px] border-white rounded-tl-xl" />
+                  <div className="absolute -top-1 -right-1 w-6 h-6 border-t-[3px] border-r-[3px] border-white rounded-tr-xl" />
+                  <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-[3px] border-l-[3px] border-white rounded-bl-xl" />
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-[3px] border-r-[3px] border-white rounded-br-xl" />
+               </div>
             )}
+            
+            {/* Gradient fade transition to content below */}
+            <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
           </div>
 
-          <div className="p-6 md:p-8 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <span className="bg-teal/10 text-teal px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Tingkat Kecocokan {bestDetection?.confidence || 0}%</span>
-            </div>
-            
-            <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground">
-              Batik {bestDetection?.label}
-            </h2>
-            
-            <p className="text-muted-foreground leading-relaxed text-base md:text-lg">
-              {bestDetection?.desc}
-            </p>
-            
-            <div className="mt-4 pt-6 border-t border-border flex items-center justify-between">
-              <button
-                type="button"
-                onClick={reset}
-                className="inline-flex items-center gap-2 rounded-full bg-secondary px-6 py-3 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
-              >
-                <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                Pindai Ulang
-              </button>
+          {/* Content Area */}
+          <div className="flex-1 px-6 sm:px-10 pb-12 overflow-y-auto bg-background relative z-10 -mt-10">
+            <div className="flex flex-col gap-4 max-w-3xl mx-auto h-full">
               
-              <button className="text-sm font-semibold text-teal hover:text-teal/80">
-                Lihat Katalog Lengkap &rarr;
-              </button>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="bg-teal/10 text-teal px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-teal/20 flex items-center gap-2">
+                  <Scan className="w-3 h-3" />
+                  Akurasi {bestDetection?.confidence || 0}%
+                </span>
+                <span className="bg-blue-500/10 text-blue-500 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-blue-500/20">
+                  YOLOv8 Scan
+                </span>
+              </div>
+              
+              <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight tracking-tight mt-2">
+                Batik {bestDetection?.label}
+              </h2>
+              
+              <p className="text-muted-foreground leading-relaxed text-lg md:text-xl font-medium mt-2">
+                {bestDetection?.desc}
+              </p>
+              
+              <div className="mt-8 pt-8 border-t border-border flex flex-col sm:flex-row items-center gap-4">
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-3 rounded-2xl bg-teal px-8 py-4 text-lg font-semibold text-white shadow-xl shadow-teal/20 transition-all hover:bg-teal/90 active:scale-95"
+                >
+                  <RotateCcw className="h-6 w-6" aria-hidden="true" />
+                  Pindai Motif Lain
+                </button>
+                
+                <button className="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-3 rounded-2xl bg-secondary px-8 py-4 text-lg font-semibold text-secondary-foreground transition-all hover:bg-secondary/80 active:scale-95">
+                  <Search className="h-6 w-6" />
+                  Eksplorasi Katalog
+                </button>
+              </div>
             </div>
           </div>
         </div>
