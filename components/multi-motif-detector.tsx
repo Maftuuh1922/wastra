@@ -21,7 +21,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const [state, setState] = useState<DetectState>('idle')
   const [imageSrc, setImageSrc] = useState<string | null>(null)
   const [liveSnapshot, setLiveSnapshot] = useState<string | null>(null)
-  const [bestDetection, setBestDetection] = useState<any>(null)
+  const [activeDetections, setActiveDetections] = useState<any[]>([])
   const [flashOn, setFlashOn] = useState(false)
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
   const [mediaSize, setMediaSize] = useState({ w: 0, h: 0 })
@@ -167,41 +167,27 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       const apiResponse = await res.json()
       
       if (apiResponse.success && apiResponse.detections && apiResponse.detections.length > 0) {
-          // VERY STRICT confidence threshold to prevent FALSE POSITIVES (detecting wrong batiks)
-          const validDetections = apiResponse.detections.filter((d: any) => d.confidence >= 70)
+          // VERY STRICT confidence threshold to prevent FALSE POSITIVES (like detecting bottles)
+          // We raise this from 70 to 88 because YOLO often guesses random objects if it only knows Batik
+          const validDetections = apiResponse.detections.filter((d: any) => d.confidence >= 85)
           
           if (validDetections.length > 0) {
-              const best = validDetections.reduce((prev: any, current: any) => {
-                  return (prev.confidence > current.confidence) ? prev : current
-              })
-              
-              // STABILIZATION: Prevent flickering/jumping classes
-              if (lastDetectionRef.current && lastDetectionRef.current.label !== best.label) {
-                 // If the class changed, only accept it if it's REALLY sure (> 75)
-                 if (best.confidence < 75) {
-                    throw new Error('Ignore low confidence class switch')
-                 }
-              }
-
               const fullCanvas = document.createElement('canvas')
               fullCanvas.width = vw
               fullCanvas.height = vh
               fullCanvas.getContext('2d')?.drawImage(video, 0, 0, vw, vh)
               setLiveSnapshot(fullCanvas.toDataURL('image/jpeg', 0.9))
               
-              const rawLabel = best.label.toLowerCase()
-              let cleanLabel = best.label.replace('batik-', '').replace(/_/g, ' ')
-              cleanLabel = cleanLabel.replace(/\b\w/g, (l: string) => l.toUpperCase())
-              const desc = BATIK_INFO[rawLabel] || 'Batik ini memiliki corak unik Nusantara.'
+              const processedDetections = validDetections.map((det: any) => {
+                 const rawLabel = det.label.toLowerCase()
+                 let cleanLabel = det.label.replace('batik-', '').replace(/_/g, ' ')
+                 cleanLabel = cleanLabel.replace(/\b\w/g, (l: string) => l.toUpperCase())
+                 const desc = BATIK_INFO[rawLabel] || 'Batik ini memiliki corak unik Nusantara.'
+                 return { ...det, label: cleanLabel, desc }
+              })
 
-              const newDetection = {
-                 ...best,
-                 label: cleanLabel,
-                 desc: desc
-              }
-
-              lastDetectionRef.current = newDetection
-              setBestDetection(newDetection)
+              lastDetectionRef.current = processedDetections[0] // just for detail fallback if needed
+              setActiveDetections(processedDetections)
               missCountRef.current = 0 // Reset miss counter
           } else {
              handleMiss()
@@ -228,7 +214,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     missCountRef.current += 1
     // Keep bounding box alive for 4 frames (around 1-2 seconds) to prevent flickering!
     if (missCountRef.current > 4) {
-       setBestDetection(null)
+       setActiveDetections([])
        lastDetectionRef.current = null
     }
   }
@@ -280,10 +266,14 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     }
   }
 
-  const viewDetail = () => {
+  const viewDetail = (targetDetection?: any) => {
     stopCamera()
     if (liveSnapshot) {
       setImageSrc(liveSnapshot)
+    }
+    // If a specific box was clicked, make sure it's set as the active one for detail view
+    if (targetDetection) {
+      lastDetectionRef.current = targetDetection
     }
     setState('analyzing')
     
@@ -311,7 +301,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const reset = () => {
     setImageSrc(null)
     setLiveSnapshot(null)
-    setBestDetection(null)
+    setActiveDetections([])
     lastDetectionRef.current = null
     missCountRef.current = 0
     startCamera()
@@ -381,24 +371,24 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
             )}
 
             {/* Dimmed Background Overlay */}
-            {bestDetection && state === 'camera_active' && (
+            {activeDetections.length > 0 && state === 'camera_active' && (
                <div className="absolute inset-0 bg-black/40 pointer-events-none transition-colors duration-500" />
             )}
 
             {/* Empty Scanning Animation */}
-            {(!bestDetection && state === 'camera_active') && (
+            {(activeDetections.length === 0 && state === 'camera_active') && (
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                 <Scan className="h-24 w-24 text-teal/40 animate-pulse" />
               </div>
             )}
 
-            {/* YOLO Bounding Box */}
-            {(bestDetection && state === 'camera_active') && (
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* YOLO Bounding Boxes */}
+            {(activeDetections.length > 0 && state === 'camera_active') && activeDetections.map((detection, idx) => (
+              <div key={idx} className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div
                   // duration-500 makes the box glide smoothly across the screen like real-time tracking!
                   className="absolute pointer-events-none transition-all duration-500 ease-out flex flex-col items-center justify-center"
-                  style={calculateBoxStyle(bestDetection)}
+                  style={calculateBoxStyle(detection)}
                 >
                   <div className="absolute top-0 left-0 w-10 h-10 border-t-[4px] border-l-[4px] border-teal rounded-tl-xl shadow-[0_0_15px_rgba(20,184,166,0.6)]" />
                   <div className="absolute top-0 right-0 w-10 h-10 border-t-[4px] border-r-[4px] border-teal rounded-tr-xl shadow-[0_0_15px_rgba(20,184,166,0.6)]" />
@@ -408,16 +398,16 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
                   <div className="absolute inset-0 bg-teal/10 mix-blend-screen" />
 
                   <button
-                    onClick={viewDetail}
+                    onClick={() => viewDetail(detection)}
                     className="z-10 rounded-full bg-black/80 backdrop-blur-xl px-6 py-3 text-sm md:text-base font-bold text-white shadow-2xl whitespace-nowrap pointer-events-auto transition-transform active:scale-95 cursor-pointer flex items-center gap-2 border border-teal hover:bg-black"
                   >
                     <Search className="w-5 h-5 text-teal" />
-                    <span>{bestDetection.label} ({bestDetection.confidence}%)</span>
+                    <span>{detection.label} ({detection.confidence}%)</span>
                     <ArrowRight className="w-5 h-5 ml-1 opacity-70 text-teal" />
                   </button>
                 </div>
               </div>
-            )}
+            ))}
             <canvas ref={canvasRef} className="hidden" />
           </div>
           
