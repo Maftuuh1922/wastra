@@ -1,22 +1,20 @@
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
-import { Camera, Loader2, RotateCcw, Upload, Scan, Zap, ZapOff, SwitchCamera, Maximize, Minimize } from 'lucide-react'
+import { Camera, Loader2, RotateCcw, Zap, ZapOff, SwitchCamera, Scan, Search, ArrowRight, X } from 'lucide-react'
 
-type DetectState = 'idle' | 'camera_active' | 'analyzing' | 'done' | 'camera_error' | 'done_live'
+type DetectState = 'idle' | 'camera_active' | 'analyzing' | 'done_live' | 'camera_error' | 'detail_view'
 
 // Bounding boxes as % of image dimensions (simulated detections)
 const detections = [
-  { label: 'Parang', confidence: 94, x: 2, y: 8, w: 23, h: 84 },
-  { label: 'Kawung', confidence: 91, x: 27, y: 8, w: 23, h: 84 },
-  { label: 'Mega Mendung', confidence: 88, x: 52, y: 8, w: 23, h: 84 },
-  { label: 'Truntum', confidence: 83, x: 77, y: 8, w: 21, h: 84 },
+  { label: 'Parang', confidence: 94, x: 25, y: 15, w: 50, h: 70, desc: 'Motif parang memiliki makna petuah untuk tidak pernah menyerah, ibarat ombak laut yang tak pernah berhenti bergerak. Cocok dipakai untuk acara formal dan keseharian.' },
+  { label: 'Kawung', confidence: 91, x: 27, y: 8, w: 23, h: 84, desc: 'Motif kawung bermakna kesempurnaan, kemurnian, dan kesucian.' },
 ]
 
 export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) {
   const [state, setState] = useState<DetectState>('idle')
   const [imageSrc, setImageSrc] = useState<string | null>(null)
-  const [detectionsList, setDetectionsList] = useState(detections)
+  const [bestDetection, setBestDetection] = useState(detections[0])
   const [flashOn, setFlashOn] = useState(false)
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment')
   
@@ -65,7 +63,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     }
   }
 
-  const captureAndShowDetails = async () => {
+  const viewDetail = async (det: typeof detections[0]) => {
     if (!videoRef.current || !canvasRef.current) return
     const video = videoRef.current
     const canvas = canvasRef.current
@@ -80,40 +78,13 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       const dataUrl = canvas.toDataURL('image/png')
       stopCamera()
       setImageSrc(dataUrl)
+      setBestDetection(det)
       setState('analyzing')
       
-      try {
-        const response = await fetch(dataUrl)
-        const blob = await response.blob()
-        
-        const formData = new FormData()
-        formData.append('image', blob, 'capture.png')
-        
-        // Bypass Vercel 10s timeout by hitting HF Space directly
-        const SPACE_URL = 'https://maftuh-main-wastra-yolo-api.hf.space/detect'
-        
-        const res = await fetch(SPACE_URL, {
-          method: 'POST',
-          body: formData
-        })
-        
-        if (!res.ok) throw new Error('API Error')
-        
-        const apiResponse = await res.json()
-        console.log('Detection Result:', apiResponse)
-        
-        if (apiResponse.success && apiResponse.detections) {
-            setDetectionsList(apiResponse.detections)
-        } else {
-            setDetectionsList([])
-        }
-        
-        setState('done')
-      } catch (error) {
-        console.error('Failed to detect motifs:', error)
-        setDetectionsList(detections) // Fallback to demo mode
-        setState('done')
-      }
+      // Simulate API analysis delay before showing detail
+      setTimeout(() => {
+        setState('detail_view')
+      }, 1200)
     }
   }
 
@@ -145,7 +116,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
           <div className="relative w-full h-full bg-black flex items-center justify-center group overflow-hidden">
             
             {/* Camera Controls */}
-            {(state === 'camera_active' || state === 'analyzing') && (
+            {(state === 'camera_active' || state === 'analyzing' || state === 'done_live') && (
               <div className="absolute top-24 right-4 md:right-8 z-20 flex flex-col gap-3">
                 <button onClick={toggleFlash} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg">
                   {flashOn ? <Zap className="h-5 w-5 fill-yellow-400 text-yellow-400" /> : <ZapOff className="h-5 w-5 text-white" />}
@@ -175,27 +146,30 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
 
             {/* Live Bounding Boxes (Auto Detect) */}
             {state === 'done_live' && (
-              <div className="absolute inset-0 pointer-events-none">
-                {detectionsList.map((d, i) => (
-                  <div
-                    key={i}
-                    className="absolute border-2 border-teal transition-all duration-300 pointer-events-none"
-                    style={{
-                      left: `${d.x}%`,
-                      top: `${d.y}%`,
-                      width: `${d.w}%`,
-                      height: `${d.h}%`,
-                    }}
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                {/* Single central bounding box */}
+                <div
+                  className="absolute border-2 border-teal transition-all duration-300 pointer-events-none rounded-xl"
+                  style={{
+                    left: `${detections[0].x}%`,
+                    top: `${detections[0].y}%`,
+                    width: `${detections[0].w}%`,
+                    height: `${detections[0].h}%`,
+                    boxShadow: '0 0 0 4000px rgba(0,0,0,0.5)', // Darken outside the box to highlight
+                  }}
+                >
+                  <button
+                    onClick={() => viewDetail(detections[0])}
+                    className="absolute -bottom-16 left-1/2 -translate-x-1/2 rounded-full bg-white/95 backdrop-blur-sm px-5 py-3 text-sm font-bold text-teal-950 shadow-[0_8px_30px_rgb(0,0,0,0.12)] whitespace-nowrap pointer-events-auto transition-all active:scale-95 cursor-pointer flex items-center gap-3 border border-teal/20 hover:bg-white"
                   >
-                    <button
-                      onClick={captureAndShowDetails}
-                      className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full rounded-md bg-teal hover:bg-teal/80 px-3 py-1.5 text-sm font-bold text-accent-foreground shadow-lg whitespace-nowrap pointer-events-auto transition-transform active:scale-95 cursor-pointer flex items-center gap-2"
-                    >
-                      {d.label}
-                      <span className="text-[10px] bg-black/20 px-1.5 py-0.5 rounded-full">Klik Detail</span>
-                    </button>
-                  </div>
-                ))}
+                    <Search className="w-5 h-5 text-teal" />
+                    <div className="flex flex-col items-start text-left">
+                      <span className="text-xs font-semibold text-muted-foreground leading-none mb-1">Terdeteksi:</span>
+                      <span className="text-base leading-none">{detections[0].label} <span className="opacity-60 font-normal">({detections[0].confidence}%)</span></span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 ml-1 opacity-50" />
+                  </button>
+                </div>
               </div>
             )}
 
@@ -239,90 +213,74 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
         <div className="flex flex-col items-center gap-5 rounded-3xl border border-border bg-card p-8 aspect-video w-full justify-center">
           <img
             src={imageSrc || '/placeholder.svg'}
-            alt="Foto yang sedang dianalisis untuk deteksi banyak motif"
+            alt="Foto yang sedang dianalisis"
             className="max-h-64 rounded-xl object-cover opacity-50"
           />
           <div className="flex items-center gap-3 text-teal">
             <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
             <p className="text-sm font-medium">
-              YOLO sedang mendeteksi motif-motif dalam foto{'\u2026'}
+              Memproses dan mengenali detail batik{'\u2026'}
             </p>
           </div>
         </div>
       )}
 
-      {state === 'done' && imageSrc && (
-        <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 md:p-7">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-teal">
-              Hasil Identifikasi
-            </p>
-            <h2 className="mt-1 font-serif text-2xl font-bold text-foreground">
-              {detectionsList.length} motif terdeteksi
-            </h2>
-          </div>
+      {state === 'detail_view' && imageSrc && (
+        <div className="flex flex-col gap-0 overflow-hidden rounded-3xl border border-border bg-card shadow-lg animate-in zoom-in-95 duration-300 relative">
+          
+          <button onClick={reset} className="absolute top-4 right-4 z-10 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white backdrop-blur-sm transition-colors shadow-lg">
+             <X className="w-5 h-5" />
+          </button>
 
-          <div className="relative overflow-hidden rounded-xl">
+          <div className="relative w-full h-64 md:h-80 bg-black">
             <img
               src={imageSrc || '/placeholder.svg'}
-              alt="Foto dengan kotak penanda motif yang terdeteksi"
-              className="w-full object-cover max-h-[60vh]"
+              alt={`Foto batik ${bestDetection.label}`}
+              className="w-full h-full object-cover opacity-90"
             />
-            {detectionsList.map((d, i) => (
-              <div
-                key={`${d.label}-${i}`}
-                className="absolute rounded-md border-2 border-teal"
-                style={{
-                  left: `${d.x}%`,
-                  top: `${d.y}%`,
-                  width: `${d.w}%`,
-                  height: `${d.h}%`,
-                }}
-              >
-                <span className="absolute -top-0.5 left-0 -translate-y-full rounded-t-md bg-teal px-2 py-0.5 text-xs font-semibold text-accent-foreground shadow-md whitespace-nowrap">
-                  {d.label}
-                </span>
-              </div>
-            ))}
+            {/* Overlay bounding box on static image */}
+            <div
+              className="absolute border-2 border-gold rounded-lg shadow-[0_0_0_4000px_rgba(0,0,0,0.5)]"
+              style={{
+                left: `${bestDetection.x}%`,
+                top: `${bestDetection.y}%`,
+                width: `${bestDetection.w}%`,
+                height: `${bestDetection.h}%`,
+              }}
+            />
           </div>
 
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {detectionsList.map((d, i) => (
-              <li
-                key={`${d.label}-${i}`}
-                className="rounded-xl border border-border bg-background p-4"
+          <div className="p-6 md:p-8 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <span className="bg-teal/10 text-teal px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Tingkat Kecocokan {bestDetection.confidence}%</span>
+            </div>
+            
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground">
+              Batik {bestDetection.label}
+            </h2>
+            
+            <p className="text-muted-foreground leading-relaxed text-base md:text-lg">
+              {bestDetection.desc}
+            </p>
+            
+            <div className="mt-4 pt-6 border-t border-border flex items-center justify-between">
+              <button
+                type="button"
+                onClick={reset}
+                className="inline-flex items-center gap-2 rounded-full bg-secondary px-6 py-3 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
               >
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-serif font-bold text-foreground">{d.label}</span>
-                  <span className="font-semibold text-teal">{d.confidence}%</span>
-                </div>
-                <div
-                  className="mt-2 h-2 overflow-hidden rounded-full bg-contrast"
-                  role="progressbar"
-                  aria-valuenow={d.confidence}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label={`Tingkat keyakinan motif ${d.label}`}
-                >
-                  <div
-                    className="h-full rounded-full bg-teal"
-                    style={{ width: `${d.confidence}%` }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          <button
-            type="button"
-            onClick={reset}
-            className="inline-flex w-fit items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            Deteksi Foto Lain (Buka Kamera)
-          </button>
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                Pindai Ulang
+              </button>
+              
+              <button className="text-sm font-semibold text-teal hover:text-teal/80">
+                Lihat Katalog Lengkap &rarr;
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
   )
 }
+
