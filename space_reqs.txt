@@ -1,0 +1,9 @@
+flask
+flask-cors
+Pillow
+diffusers
+transformers
+accelerate
+huggingface-hub
+torch
+peft

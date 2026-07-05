@@ -79,8 +79,8 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     let pixelW = (box.w / 100) * visualWidth
     let pixelH = (box.h / 100) * visualHeight
 
-    // Clamp to screen bounds so glowing corners never get hidden outside the phone screen
-    const PADDING = 16
+    // Clamp to screen bounds so glowing corners never get hidden
+    const PADDING = 24
     if (pixelX < PADDING) { 
        pixelW -= (PADDING - pixelX)
        pixelX = PADDING 
@@ -94,6 +94,22 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     }
     if (pixelY + pixelH > ch - PADDING) { 
        pixelH = (ch - PADDING) - pixelY 
+    }
+
+    // SMART SHRINK: If YOLO predicts a box that is basically the whole screen (texture detection),
+    // we shrink it slightly towards the center so it visually looks like a responsive scanner box
+    // instead of sticking to the absolute edges of the phone!
+    const screenArea = cw * ch
+    const boxArea = pixelW * pixelH
+    if (boxArea > screenArea * 0.7) {
+       // Shrink by 20% to make it look like a targeted reticle
+       const shrinkFactor = 0.8
+       const newW = pixelW * shrinkFactor
+       const newH = pixelH * shrinkFactor
+       pixelX = pixelX + (pixelW - newW) / 2
+       pixelY = pixelY + (pixelH - newH) / 2
+       pixelW = newW
+       pixelH = newH
     }
 
     return {
