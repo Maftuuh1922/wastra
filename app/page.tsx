@@ -6,7 +6,7 @@ import { MotifCatalog } from '@/components/motif-catalog'
 import { Faq } from '@/components/faq'
 import { BenchmarkChart } from '@/components/benchmark-chart'
 import { CulturalTrends } from '@/components/cultural-trends'
-import { LearningCenter } from '@/components/learning-center'
+import { ResearchHub } from '@/components/research-hub'
 import { HowItWorks } from '@/components/how-it-works'
 import { SiteFooter } from '@/components/site-footer'
 
@@ -163,7 +163,7 @@ export default function HomePage() {
           </div>
 
           <div className="relative z-10">
-            <LearningCenter />
+            <ResearchHub />
             <HowItWorks />
           </div>
         </div>

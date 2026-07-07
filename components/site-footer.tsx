@@ -29,8 +29,8 @@ export function SiteFooter() {
             <Link href="/#katalog" className="text-sm text-muted-foreground hover:text-foreground">
               Katalog
             </Link>
-            <Link href="/#belajar" className="text-sm text-muted-foreground hover:text-foreground">
-              Belajar
+            <Link href="/#riset" className="text-sm text-muted-foreground hover:text-foreground">
+              Riset
             </Link>
             <Link href="/#faq" className="text-sm text-muted-foreground hover:text-foreground">
               FAQ

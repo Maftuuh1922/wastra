@@ -63,10 +63,10 @@ export function Navbar() {
             Katalog
           </Link>
           <Link
-            href="/#belajar"
+            href="/#riset"
             className={`text-sm font-medium transition-colors hover:opacity-70 text-foreground`}
           >
-            Belajar
+            Riset
           </Link>
           <Link
             href="/#faq"
@@ -106,7 +106,7 @@ export function Navbar() {
         {[
           { href: '/ai', label: 'Coba Wastra AI' },
           { href: '/#katalog', label: 'Katalog' },
-          { href: '/#belajar', label: 'Belajar' },
+          { href: '/#riset', label: 'Riset' },
           { href: '/#faq', label: 'FAQ' },
         ].map((item) => (
           <Link
