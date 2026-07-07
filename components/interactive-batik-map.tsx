@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { MapPin, X, Map as MapIcon, ChevronRight } from 'lucide-react'
 import { mapPinsData, MapPin as MapPinType } from '@/lib/map-pins'
 
@@ -162,14 +163,14 @@ export function InteractiveBatikMap() {
         p.y += p.vy
 
         // Render particle
-        ctx.font = \`\${p.size}px monospace\`
+        ctx.font = `${p.size}px monospace`
         ctx.fillStyle = p.color
         
         // Highlight particle if it's currently displaced significantly
         const displacement = Math.abs(p.x - p.originX) + Math.abs(p.y - p.originY)
         if (displacement > 5) {
           ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
-          ctx.font = \`bold \${p.size + 2}px monospace\`
+          ctx.font = `bold ${p.size + 2}px monospace`
         }
 
         ctx.fillText(p.char, p.x, p.y)
@@ -218,8 +219,8 @@ export function InteractiveBatikMap() {
               key={pin.id}
               onClick={() => setSelectedPin(pin)}
               className="absolute w-8 h-8 -ml-4 -mt-4 rounded-full bg-teal/20 flex items-center justify-center cursor-pointer group hover:bg-teal transition-all duration-300"
-              style={{ left: \`\${pin.x}%\`, top: \`\${pin.y}%\` }}
-              aria-label={\`Lihat wastra dari \${pin.region}\`}
+              style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
+              aria-label={`Lihat wastra dari ${pin.region}`}
             >
               <div className="w-3 h-3 bg-teal rounded-full group-hover:bg-card group-hover:scale-150 transition-all shadow-[0_0_15px_rgba(20,184,166,0.8)]" />
               
@@ -234,11 +235,11 @@ export function InteractiveBatikMap() {
 
       {/* Detail Modal Overlay */}
       <div 
-        className={\`absolute inset-0 bg-background/80 backdrop-blur-sm z-50 transition-all duration-500 flex items-center justify-center px-5 \${selectedPin ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}\`}
+        className={`absolute inset-0 bg-background/80 backdrop-blur-sm z-50 transition-all duration-500 flex items-center justify-center px-5 ${selectedPin ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setSelectedPin(null)}
       >
         <div 
-          className={\`bg-card border border-border shadow-2xl rounded-3xl overflow-hidden max-w-3xl w-full flex flex-col md:flex-row transition-all duration-500 delay-100 \${selectedPin ? 'translate-y-0 scale-100' : 'translate-y-8 scale-95'}\`}
+          className={`bg-card border border-border shadow-2xl rounded-3xl overflow-hidden max-w-3xl w-full flex flex-col md:flex-row transition-all duration-500 delay-100 ${selectedPin ? 'translate-y-0 scale-100' : 'translate-y-8 scale-95'}`}
           onClick={(e) => e.stopPropagation()}
         >
           {selectedPin && (
