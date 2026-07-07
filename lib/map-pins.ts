@@ -11,8 +11,8 @@ export interface MapPin {
 export const mapPinsData: MapPin[] = [
   {
     id: 'sumatera',
-    x: 13,
-    y: 43,
+    x: 15,
+    y: 35,
     region: 'Sumatera',
     motifName: 'Batik Tanah Liek & Ulos',
     description: 'Di Sumatera, wastra tidak hanya batik tetapi juga tenun seperti Ulos. Batik Tanah Liek dari Minangkabau sangat unik karena pewarnaannya menggunakan tanah liat yang menghasilkan warna bumi (earth tones).',
@@ -20,8 +20,8 @@ export const mapPinsData: MapPin[] = [
   },
   {
     id: 'jawa-barat',
-    x: 27,
-    y: 74,
+    x: 28,
+    y: 80,
     region: 'Jawa Barat & Banten',
     motifName: 'Megamendung & Baduy',
     description: 'Motif awan bergelombang dari Cirebon yang melambangkan kesejukan. Di Banten, suku Baduy juga menenun kain dengan warna dominan putih, hitam, dan biru tua yang sarat makna spiritual.',
@@ -29,8 +29,8 @@ export const mapPinsData: MapPin[] = [
   },
   {
     id: 'jawa-tengah',
-    x: 32,
-    y: 76,
+    x: 35,
+    y: 85,
     region: 'Jawa Tengah & Yogyakarta',
     motifName: 'Parang & Kawung',
     description: 'Jantung dari batik klasik Indonesia. Motif Parang melambangkan ombak laut yang tak pernah berhenti bergerak, sedangkan Kawung melambangkan hati yang suci dan keadilan.',
@@ -38,8 +38,8 @@ export const mapPinsData: MapPin[] = [
   },
   {
     id: 'madura',
-    x: 39,
-    y: 74,
+    x: 40,
+    y: 78,
     region: 'Madura',
     motifName: 'Batik Gentongan',
     description: 'Batik Madura terkenal dengan warna merah terang (mengkudu) dan berani. Teknik pewarnaannya menggunakan gentong tanah liat yang direndam berbulan-bulan.',
@@ -48,7 +48,7 @@ export const mapPinsData: MapPin[] = [
   {
     id: 'bali',
     x: 43,
-    y: 80,
+    y: 90,
     region: 'Bali',
     motifName: 'Tenun Gringsing & Endek',
     description: 'Tenun Gringsing dari Tenganan adalah satu-satunya kain tenun ikat ganda di Indonesia, dipercaya memiliki kekuatan penolak bala. Kain Endek dipakai dalam berbagai upacara adat Bali.',
@@ -57,7 +57,7 @@ export const mapPinsData: MapPin[] = [
   {
     id: 'nusa-tenggara',
     x: 52,
-    y: 83,
+    y: 92,
     region: 'Nusa Tenggara',
     motifName: 'Tenun Ikat Sumba',
     description: 'Tenun berukuran besar yang menampilkan motif figuratif seperti kuda, rusa, dan manusia. Sangat berharga dan sering dipakai sebagai simbol status sosial dalam upacara kematian (Marapu).',
@@ -66,7 +66,7 @@ export const mapPinsData: MapPin[] = [
   {
     id: 'kalimantan',
     x: 42,
-    y: 43,
+    y: 30,
     region: 'Kalimantan',
     motifName: 'Batik Benang Bintik / Dayak',
     description: 'Motif yang sangat dipengaruhi oleh kepercayaan suku Dayak, seperti pohon kehidupan (Batang Garing) yang melambangkan keseimbangan antara dunia atas dan bawah.',
@@ -74,8 +74,8 @@ export const mapPinsData: MapPin[] = [
   },
   {
     id: 'sulawesi',
-    x: 58,
-    y: 53,
+    x: 60,
+    y: 45,
     region: 'Sulawesi',
     motifName: 'Batik Toraja (Paqbarre Allo)',
     description: 'Motif dari Sulawesi banyak terinspirasi dari ukiran kayu rumah adat Tongkonan. Paqbarre Allo (Matahari) melambangkan kebesaran dan kemuliaan.',
@@ -83,8 +83,8 @@ export const mapPinsData: MapPin[] = [
   },
   {
     id: 'maluku',
-    x: 77,
-    y: 57,
+    x: 78,
+    y: 55,
     region: 'Maluku',
     motifName: 'Tenun Tanimbar',
     description: 'Kain tenun dari kepulauan Maluku Tenggara yang khas dengan garis-garis tegas dan warna cerah. Dulu, motifnya menandakan keberanian kaum pria yang pulang dari medan perang.',
@@ -93,7 +93,7 @@ export const mapPinsData: MapPin[] = [
   {
     id: 'papua',
     x: 88,
-    y: 55,
+    y: 50,
     region: 'Papua',
     motifName: 'Batik Cendrawasih & Asmat',
     description: 'Batik Papua terkenal dengan warnanya yang cerah dan motif figuratif seperti burung Cendrawasih, alat musik Tifa, dan patung suku Asmat yang sangat ikonik.',

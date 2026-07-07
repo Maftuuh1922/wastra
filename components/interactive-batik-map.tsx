@@ -35,8 +35,8 @@ export function InteractiveBatikMap() {
           <Image 
             src="/images/peta.png"
             alt="Peta Indonesia"
-            width={1200}
-            height={545}
+            width={3009}
+            height={1135}
             className="w-full h-auto opacity-70 dark:opacity-50"
             priority
             sizes="(max-width: 1200px) 100vw, 1200px"
