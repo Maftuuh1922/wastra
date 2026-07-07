@@ -127,7 +127,10 @@ export function LearningCenter() {
               key={m.title}
               href="#"
               className="group flex flex-col rounded-2xl border border-border bg-card p-6 transition-colors hover:border-teal hover:shadow-sm"
-              onClick={(e) => e.preventDefault()} // Prevent jump to top for mockup links
+              onClick={(e) => {
+                e.preventDefault()
+                alert('Materi pembelajaran ini sedang dipersiapkan dan akan segera hadir!')
+              }}
             >
               <m.icon className="h-7 w-7 text-teal transition-transform group-hover:-translate-y-1" aria-hidden="true" />
               <h3 className="mt-4 font-serif text-lg font-bold text-foreground group-hover:text-teal transition-colors">
