@@ -14,13 +14,13 @@ export function SiteFooter() {
         <nav className="flex gap-12" aria-label="Tautan footer">
           <div className="flex flex-col gap-2.5">
             <p className="text-sm font-semibold text-foreground">Alat AI</p>
-            <Link href="/scan-cepat" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/ai?tab=scan-cepat" className="text-sm text-muted-foreground hover:text-foreground">
               Scan Cepat
             </Link>
-            <Link href="/deteksi-multi-motif" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/ai?tab=deteksi-multi-motif" className="text-sm text-muted-foreground hover:text-foreground">
               Deteksi Multi-Motif
             </Link>
-            <Link href="/wastra-studio" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/ai?tab=wastra-studio" className="text-sm text-muted-foreground hover:text-foreground">
               Wastra Studio
             </Link>
           </div>
