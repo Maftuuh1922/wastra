@@ -11,8 +11,8 @@ export interface MapPin {
 export const mapPinsData: MapPin[] = [
   {
     id: 'sumatera',
-    x: 15,
-    y: 35,
+    x: 14,
+    y: 45,
     region: 'Sumatera',
     motifName: 'Batik Tanah Liek & Ulos',
     description: 'Di Sumatera, wastra tidak hanya batik tetapi juga tenun seperti Ulos. Batik Tanah Liek dari Minangkabau sangat unik karena pewarnaannya menggunakan tanah liat yang menghasilkan warna bumi (earth tones).',
@@ -20,8 +20,8 @@ export const mapPinsData: MapPin[] = [
   },
   {
     id: 'jawa-barat',
-    x: 23,
-    y: 75,
+    x: 25,
+    y: 72,
     region: 'Jawa Barat (Cirebon)',
     motifName: 'Megamendung',
     description: 'Motif awan bergelombang yang melambangkan kesejukan dan ketenangan. Memiliki pengaruh kuat dari budaya Tiongkok yang berakulturasi dengan keraton Cirebon.',
@@ -30,7 +30,7 @@ export const mapPinsData: MapPin[] = [
   {
     id: 'jawa-tengah',
     x: 32,
-    y: 80,
+    y: 75,
     region: 'Jawa Tengah & Yogyakarta',
     motifName: 'Parang & Kawung',
     description: 'Jantung dari batik klasik Indonesia. Motif Parang melambangkan ombak laut yang tak pernah berhenti bergerak, sedangkan Kawung melambangkan hati yang suci dan keadilan.',
@@ -39,7 +39,7 @@ export const mapPinsData: MapPin[] = [
   {
     id: 'kalimantan',
     x: 42,
-    y: 40,
+    y: 45,
     region: 'Kalimantan',
     motifName: 'Batik Benang Bintik / Dayak',
     description: 'Motif yang sangat dipengaruhi oleh kepercayaan suku Dayak, seperti pohon kehidupan (Batang Garing) yang melambangkan keseimbangan antara dunia atas dan bawah.',
@@ -47,8 +47,8 @@ export const mapPinsData: MapPin[] = [
   },
   {
     id: 'sulawesi',
-    x: 60,
-    y: 45,
+    x: 58,
+    y: 55,
     region: 'Sulawesi',
     motifName: 'Batik Toraja (Paqbarre Allo)',
     description: 'Motif dari Sulawesi banyak terinspirasi dari ukiran kayu rumah adat Tongkonan. Paqbarre Allo (Matahari) melambangkan kebesaran dan kemuliaan.',
@@ -56,8 +56,8 @@ export const mapPinsData: MapPin[] = [
   },
   {
     id: 'papua',
-    x: 88,
-    y: 50,
+    x: 87,
+    y: 60,
     region: 'Papua',
     motifName: 'Batik Cendrawasih & Asmat',
     description: 'Batik Papua terkenal dengan warnanya yang cerah dan motif figuratif seperti burung Cendrawasih, alat musik Tifa, dan patung suku Asmat yang sangat ikonik.',

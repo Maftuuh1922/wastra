@@ -45,11 +45,11 @@ export function InteractiveBatikMap() {
             <button
               key={pin.id}
               onClick={() => setSelectedPin(pin)}
-              className="absolute w-8 h-8 -ml-4 -mt-4 rounded-full bg-teal/20 flex items-center justify-center cursor-pointer group hover:bg-teal transition-all duration-300 shadow-lg"
+              className="absolute w-8 h-8 -ml-4 -mt-4 rounded-full bg-teal/20 flex items-center justify-center cursor-pointer group hover:bg-teal transition-all duration-300"
               style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
               aria-label={`Lihat wastra dari ${pin.region}`}
             >
-              <div className="w-3 h-3 bg-teal rounded-full group-hover:bg-card group-hover:scale-150 transition-all shadow-[0_0_15px_rgba(20,184,166,1)] animate-pulse" />
+              <div className="w-3 h-3 bg-teal rounded-full group-hover:bg-card group-hover:scale-150 transition-all shadow-md" />
               
               {/* Tooltip on hover */}
               <div className="absolute top-10 left-1/2 -translate-x-1/2 bg-foreground text-background px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl">
