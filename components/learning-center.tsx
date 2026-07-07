@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { BookMarked, GraduationCap, Palette, Sparkles } from 'lucide-react'
-
-type Level = 'sd' | 'smp-sma' | 'umum'
+import { useState, useEffect, useMemo } from 'react'
+import { BookMarked, GraduationCap, Palette, Sparkles, LucideIcon } from 'lucide-react'
+import Link from 'next/link'
+import { learningDataset, Level } from '@/lib/learning-dataset'
 
 const levels: { id: Level; label: string }[] = [
   { id: 'sd', label: 'SD' },
@@ -11,74 +11,40 @@ const levels: { id: Level; label: string }[] = [
   { id: 'umum', label: 'Umum & Dewasa' },
 ]
 
-const materials: Record<
-  Level,
-  { icon: typeof Palette; title: string; description: string }[]
-> = {
-  sd: [
-    {
-      icon: Palette,
-      title: 'Cerita Bergambar: Si Kawung',
-      description:
-        'Ikuti petualangan Si Kawung mengenal bentuk lingkaran ajaib di kain batik lewat cerita dan gambar seru.',
-    },
-    {
-      icon: Sparkles,
-      title: 'Tebak Motif Yuk!',
-      description:
-        'Permainan mencocokkan gambar motif dengan namanya — belajar sambil bermain.',
-    },
-    {
-      icon: BookMarked,
-      title: 'Mewarnai Motif Nusantara',
-      description:
-        'Lembar mewarnai motif parang dan mega mendung yang bisa dicetak di rumah atau di kelas.',
-    },
-  ],
-  'smp-sma': [
-    {
-      icon: BookMarked,
-      title: 'Filosofi di Balik Motif',
-      description:
-        'Kupas makna simbolik kawung, parang, dan truntum serta perannya dalam upacara adat Jawa.',
-    },
-    {
-      icon: GraduationCap,
-      title: 'Sejarah Batik Nusantara',
-      description:
-        'Perjalanan batik dari keraton hingga diakui UNESCO sebagai Warisan Budaya Takbenda pada 2009.',
-    },
-    {
-      icon: Sparkles,
-      title: 'Proyek Kelas: Peta Motif Daerah',
-      description:
-        'Panduan proyek kelompok memetakan motif khas daerah masing-masing beserta ceritanya.',
-    },
-  ],
-  umum: [
-    {
-      icon: GraduationCap,
-      title: 'Kajian: Taksonomi Motif Batik',
-      description:
-        'Telaah mendalam penggolongan motif geometris dan non-geometris beserta sebaran regionalnya.',
-    },
-    {
-      icon: BookMarked,
-      title: 'Batik Tulis, Cap, dan Printing',
-      description:
-        'Memahami perbedaan teknik produksi, nilai budayanya, dan cara mengenali masing-masing.',
-    },
-    {
-      icon: Sparkles,
-      title: 'Etika AI dan Warisan Budaya',
-      description:
-        'Diskusi tentang peran teknologi generatif dalam pelestarian — peluang sekaligus batasannya.',
-    },
-  ],
+const iconMap: Record<string, LucideIcon> = {
+  Palette,
+  Sparkles,
+  BookMarked,
+  GraduationCap
 }
 
 export function LearningCenter() {
   const [level, setLevel] = useState<Level>('sd')
+  const [seed, setSeed] = useState(0)
+
+  useEffect(() => {
+    // Generate a daily seed on the client to avoid hydration mismatch
+    setSeed(Math.floor(Date.now() / 86400000))
+  }, [])
+
+  // Get 3 items per level based on the daily seed
+  const displayMaterials = useMemo(() => {
+    const allForLevel = learningDataset.filter(m => m.level === level)
+    
+    if (seed === 0) {
+      // Default before hydration (server-side render)
+      return allForLevel.slice(0, 3)
+    }
+
+    // A simple deterministic shuffle based on the daily seed
+    const shuffled = [...allForLevel].sort((a, b) => {
+      const hashA = (a.slug.length * seed) % 100
+      const hashB = (b.slug.length * seed) % 100
+      return hashA - hashB
+    })
+
+    return shuffled.slice(0, 3)
+  }, [level, seed])
 
   return (
     <section id="belajar" className="py-20 md:py-28">
@@ -92,7 +58,7 @@ export function LearningCenter() {
           </h2>
           <p className="mt-4 leading-relaxed text-muted-foreground">
             Materi yang sama pentingnya, disampaikan dengan cara yang berbeda —
-            pilih jenjang pendidikanmu.
+            pilih jenjang pendidikanmu. Berubah setiap harinya!
           </p>
         </div>
 
@@ -101,7 +67,7 @@ export function LearningCenter() {
           role="tablist"
           aria-label="Pilih jenjang pendidikan"
         >
-          <div className="flex gap-2 rounded-full border border-border bg-card p-1.5">
+          <div className="flex gap-2 rounded-full border border-border bg-card p-1.5 shadow-sm">
             {levels.map((l) => (
               <button
                 key={l.id}
@@ -109,10 +75,10 @@ export function LearningCenter() {
                 role="tab"
                 aria-selected={level === l.id}
                 onClick={() => setLevel(l.id)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                className={`rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 ${
                   level === l.id
-                    ? 'bg-primary text-secondary'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary text-secondary shadow-md scale-105'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 {l.label}
@@ -122,28 +88,30 @@ export function LearningCenter() {
         </div>
 
         <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {materials[level].map((m) => (
-            <a
-              key={m.title}
-              href="#"
-              className="group flex flex-col rounded-2xl border border-border bg-card p-6 transition-colors hover:border-teal hover:shadow-sm"
-              onClick={(e) => {
-                e.preventDefault()
-                alert('Materi pembelajaran ini sedang dipersiapkan dan akan segera hadir!')
-              }}
-            >
-              <m.icon className="h-7 w-7 text-teal transition-transform group-hover:-translate-y-1" aria-hidden="true" />
-              <h3 className="mt-4 font-serif text-lg font-bold text-foreground group-hover:text-teal transition-colors">
-                {m.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground flex-1">
-                {m.description}
-              </p>
-              <div className="mt-4 text-sm font-semibold text-teal opacity-0 transition-opacity group-hover:opacity-100">
-                Mulai Belajar &rarr;
-              </div>
-            </a>
-          ))}
+          {displayMaterials.map((m) => {
+            const Icon = iconMap[m.iconName] || BookMarked
+            return (
+              <Link
+                key={m.slug}
+                href={`/belajar/${m.slug}`}
+                className="group flex flex-col rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:border-teal hover:shadow-lg hover:-translate-y-1"
+              >
+                <div className="rounded-full bg-teal/10 w-14 h-14 flex items-center justify-center mb-2 group-hover:bg-teal/20 transition-colors">
+                  <Icon className="h-7 w-7 text-teal transition-transform group-hover:scale-110" aria-hidden="true" />
+                </div>
+                <h3 className="mt-4 font-serif text-xl font-bold text-foreground group-hover:text-teal transition-colors">
+                  {m.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground flex-1">
+                  {m.description}
+                </p>
+                <div className="mt-6 flex items-center text-sm font-bold text-teal">
+                  Mulai Belajar 
+                  <span className="ml-1 transition-transform group-hover:translate-x-1">&rarr;</span>
+                </div>
+              </Link>
+            )
+          })}
         </div>
       </div>
     </section>
