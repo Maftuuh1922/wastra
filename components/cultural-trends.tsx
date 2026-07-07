@@ -8,7 +8,7 @@ const fallbackTrends = [
       'Motif klasik keraton kini hadir di blazer dan outerwear anak muda kota — bukti batik terus beradaptasi tanpa kehilangan makna.',
     image: '/images/trend-fashion.png',
     alt: 'Model muda mengenakan blazer batik motif parang di latar perkotaan',
-    link: '#',
+    link: 'https://www.google.com/search?q=batik+fashion+streetwear',
   },
   {
     tag: 'Runway',
@@ -17,7 +17,7 @@ const fallbackTrends = [
       'Desainer Indonesia membawa awan Cirebon ke pekan mode internasional, membuktikan wastra Nusantara berkelas global.',
     image: '/images/trend-runway.png',
     alt: 'Model berjalan di runway mengenakan gaun batik mega mendung',
-    link: '#',
+    link: 'https://www.google.com/search?q=batik+mega+mendung+fashion+week',
   },
   {
     tag: 'Regenerasi',
@@ -26,18 +26,20 @@ const fallbackTrends = [
       'Sanggar dan sekolah menghidupkan kembali tradisi canting — kini dibantu teknologi untuk mengenal ribuan motif warisan.',
     image: '/images/trend-craft.png',
     alt: 'Pelajar Indonesia belajar membatik di sanggar dengan kain batik warna-warni',
-    link: '#',
+    link: 'https://www.google.com/search?q=generasi+muda+belajar+membatik',
   },
 ]
 
 async function getBatikNews() {
   const endpoints = [
+    // Original APIs
     'https://api-berita-indonesia.vercel.app/antara/terbaru/',
     'https://api-berita-indonesia.vercel.app/cnn/terbaru/',
     'https://api-berita-indonesia.vercel.app/cnbc/terbaru/',
-    'https://api-berita-indonesia.vercel.app/republika/terbaru/',
-    'https://api-berita-indonesia.vercel.app/sindonews/terbaru/',
-    'https://api-berita-indonesia.vercel.app/kumparan/terbaru/',
+    // Alternative APIs in case original hits 402 Limit
+    'https://berita-indo-api.vercel.app/v1/cnn-news',
+    'https://berita-indo-api.vercel.app/v1/cnbc-news',
+    'https://berita-indo-api.vercel.app/v1/kumparan-news',
   ]
 
   let allPosts: any[] = []
@@ -47,19 +49,40 @@ async function getBatikNews() {
       const res = await fetch(url, { next: { revalidate: 3600 } })
       if (!res.ok) continue
       const json = await res.json()
-      if (json.data && json.data.posts) {
-        allPosts = allPosts.concat(json.data.posts)
+      
+      let posts = []
+      if (json.data && Array.isArray(json.data.posts)) {
+        // api-berita-indonesia format
+        posts = json.data.posts.map((p: any) => ({
+          title: p.title,
+          link: p.link,
+          description: p.description,
+          pubDate: p.pubDate,
+          thumbnail: p.thumbnail
+        }))
+      } else if (json.data && Array.isArray(json.data)) {
+        // berita-indo-api format
+        posts = json.data.map((p: any) => ({
+          title: p.title,
+          link: p.link,
+          description: p.contentSnippet || p.description || '',
+          pubDate: p.isoDate || p.pubDate,
+          thumbnail: p.image?.large || p.image?.small || p.image || p.thumbnail
+        }))
       }
+      
+      allPosts = allPosts.concat(posts)
     } catch (e) {
       console.error(`Failed to fetch from ${url}`, e)
     }
   }
 
   // filter
-  const batikNews = allPosts.filter(post => 
-    post.title.toLowerCase().includes('batik') || 
-    post.description.toLowerCase().includes('batik')
-  )
+  const batikNews = allPosts.filter(post => {
+    const titleMatch = post.title && post.title.toLowerCase().includes('batik')
+    const descMatch = post.description && post.description.toLowerCase().includes('batik')
+    return titleMatch || descMatch
+  })
 
   // sort by pubDate (newest first)
   batikNews.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
@@ -101,7 +124,7 @@ export async function CulturalTrends() {
               key={idx}
               className="group overflow-hidden rounded-2xl border border-border bg-card flex flex-col"
             >
-              <a href={t.link} target={t.link !== '#' ? "_blank" : "_self"} rel="noreferrer" className="flex-1 flex flex-col">
+              <a href={t.link} target="_blank" rel="noreferrer" className="flex-1 flex flex-col">
                 <div className="aspect-[4/3] overflow-hidden bg-muted">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
