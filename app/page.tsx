@@ -7,9 +7,9 @@ import { Faq } from '@/components/faq'
 import { BenchmarkChart } from '@/components/benchmark-chart'
 import { CulturalTrends } from '@/components/cultural-trends'
 import { ResearchHub } from '@/components/research-hub'
+import { InteractiveBatikMap } from '@/components/interactive-batik-map'
 import { HowItWorks } from '@/components/how-it-works'
 import { SiteFooter } from '@/components/site-footer'
-
 export default function HomePage() {
   return (
     <>
@@ -163,6 +163,7 @@ export default function HomePage() {
           </div>
 
           <div className="relative z-10">
+            <InteractiveBatikMap />
             <ResearchHub />
             <HowItWorks />
           </div>
