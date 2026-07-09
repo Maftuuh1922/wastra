@@ -8,7 +8,7 @@ try:
         repo_id="maftuh-main/wastra-lora-api",
         repo_type="space",
         filename="app.py",
-        token="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"
+        token="YOUR_HF_TOKEN_HERE"
     )
     shutil.copy(file_path, "c:/Users/Administrator/wastra/space_app.py")
     
@@ -17,7 +17,7 @@ try:
         repo_id="maftuh-main/wastra-lora-api",
         repo_type="space",
         filename="requirements.txt",
-        token="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"
+        token="YOUR_HF_TOKEN_HERE"
     )
     shutil.copy(req_path, "c:/Users/Administrator/wastra/space_reqs.txt")
     

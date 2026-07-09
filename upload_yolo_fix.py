@@ -2,7 +2,7 @@ from huggingface_hub import HfApi
 import sys
 
 try:
-    token = "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"
+    token = "YOUR_HF_TOKEN_HERE"
     api = HfApi(token=token)
     
     print("Uploading updated app.py to maftuh-main/wastra-yolo-api...")

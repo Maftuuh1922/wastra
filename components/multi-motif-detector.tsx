@@ -66,16 +66,15 @@ const CONFIG = {
   SCAN_INTERVAL_BACKOFF_MS: 1500, // slower polling while the API is failing
   // A single low-confidence frame should never be enough to label something.
   // A detection must survive this many *consecutive* frames before it's shown.
-  // 2 (bukan 3) karena API di HF Space lambat (~1-2s per frame); syarat 3
-  // frame berturut-turut sering memutus streak deteksi yang sebenarnya valid.
-  STABLE_FRAMES_REQUIRED: 2,
+  // Diubah menjadi 1 agar hasil deteksi langsung muncul secara responsif
+  // tanpa harus menunggu 2 frame (yang memakan waktu 2-4 detik di HF Space).
+  STABLE_FRAMES_REQUIRED: 1,
   // How many frames a tracked object is allowed to "disappear" for before
   // we drop it (keeps boxes from flickering when a frame is missed/slow).
   MISS_TOLERANCE_FRAMES: 4,
   // Baseline confidence needed to even consider a detection.
-  // Penolakan objek non-batik sekarang dilakukan oleh MODEL (kelas
-  // "bukan_batik" di sisi API), bukan lagi oleh heuristik ukuran box di FE.
-  CONFIDENCE_THRESHOLD: 60,
+  // Sedikit dinaikkan untuk mengimbangi STABLE_FRAMES = 1 agar tidak terlalu banyak false positive.
+  CONFIDENCE_THRESHOLD: 65,
   // Label kelas negatif dari model — tidak boleh pernah ditampilkan.
   NEGATIVE_LABEL: 'bukan_batik',
   MAX_SIMULTANEOUS_DETECTIONS: 6,
@@ -414,7 +413,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     setImageSrc(snapshot)
     stopCamera()
     setState('analyzing')
-    window.setTimeout(() => { if (isMountedRef.current) setState('detail_view') }, 700)
+    window.setTimeout(() => { if (isMountedRef.current) setState('detail_view') }, 150)
   }
 
   const toggleCamera = () => {

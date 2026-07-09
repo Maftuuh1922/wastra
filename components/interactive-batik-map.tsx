@@ -70,51 +70,59 @@ export function InteractiveBatikMap() {
         onClick={() => setSelectedPin(null)}
       >
         <div 
-          className={`bg-card border border-border shadow-2xl rounded-3xl overflow-hidden max-w-3xl w-full flex flex-col md:flex-row transition-all duration-500 delay-100 ${selectedPin ? 'translate-y-0 scale-100' : 'translate-y-8 scale-95'}`}
+          className={`bg-card border border-border shadow-2xl rounded-3xl overflow-hidden max-w-3xl w-full flex flex-col md:flex-row transition-all duration-500 delay-100 relative min-h-[500px] md:min-h-[400px] ${selectedPin ? 'translate-y-0 scale-100' : 'translate-y-8 scale-95'}`}
           onClick={(e) => e.stopPropagation()}
         >
-          {selectedPin && (
-            <>
-              <div className="w-full md:w-1/2 h-64 md:h-auto relative bg-muted">
-                <Image 
-                  src={selectedPin.image} 
-                  alt={selectedPin.motifName}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-bold text-teal uppercase tracking-widest">{selectedPin.region}</span>
-                  <button 
-                    onClick={() => setSelectedPin(null)}
-                    className="p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+          {mapPinsData.map((pin) => {
+            const isActive = selectedPin?.id === pin.id
+            return (
+              <div 
+                key={pin.id}
+                className={`absolute inset-0 flex flex-col md:flex-row transition-opacity duration-300 ${isActive ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'}`}
+              >
+                <div className="w-full md:w-1/2 h-64 md:h-full relative bg-muted">
+                  <Image 
+                    src={pin.image} 
+                    alt={pin.motifName}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover"
+                    priority={isActive}
+                  />
                 </div>
-                
-                <h3 className="font-serif text-3xl font-bold text-foreground mb-4">
-                  {selectedPin.motifName}
-                </h3>
-                
-                <p className="text-muted-foreground leading-relaxed flex-1">
-                  {selectedPin.description}
-                </p>
+                <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col bg-card h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-bold text-teal uppercase tracking-widest">{pin.region}</span>
+                    <button 
+                      onClick={() => setSelectedPin(null)}
+                      className="p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <h3 className="font-serif text-3xl font-bold text-foreground mb-4">
+                    {pin.motifName}
+                  </h3>
+                  
+                  <p className="text-muted-foreground leading-relaxed flex-1">
+                    {pin.description}
+                  </p>
 
-                <div className="mt-8">
-                  <Link 
-                    href="/#riset" 
-                    onClick={() => setSelectedPin(null)}
-                    className="inline-flex items-center text-sm font-bold text-foreground hover:text-teal transition-colors"
-                  >
-                    Pelajari lebih lanjut di Riset 
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Link>
+                  <div className="mt-8">
+                    <Link 
+                      href="/#riset" 
+                      onClick={() => setSelectedPin(null)}
+                      className="inline-flex items-center text-sm font-bold text-foreground hover:text-teal transition-colors"
+                    >
+                      Pelajari lebih lanjut di Riset 
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </>
-          )}
+            )
+          })}
         </div>
       </div>
     </section>

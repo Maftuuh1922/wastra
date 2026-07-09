@@ -3,7 +3,7 @@ import sys
 
 try:
     print("Logging into Hugging Face...")
-    login(token="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")
+    login(token="YOUR_HF_TOKEN_HERE")
     api = HfApi()
     
     print("Uploading new LoRA weights (pytorch_lora_weights.safetensors) to maftuh-main/wastra-lora-api...")

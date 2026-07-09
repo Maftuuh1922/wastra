@@ -2,7 +2,7 @@ from huggingface_hub import HfApi
 import sys
 
 try:
-    api = HfApi(token="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")
+    api = HfApi(token="YOUR_HF_TOKEN_HERE")
     
     print("Uploading optimized app.py to maftuh-main/wastra-lora-api...")
     api.upload_file(
@@ -13,7 +13,7 @@ try:
     )
     
     print("Restarting the Space to apply LCM optimization...")
-    api.restart_space(repo_id="maftuh-main/wastra-lora-api", token="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")
+    api.restart_space(repo_id="maftuh-main/wastra-lora-api", token="YOUR_HF_TOKEN_HERE")
     
     print("✅ Successfully uploaded and restarted!")
 except Exception as e:

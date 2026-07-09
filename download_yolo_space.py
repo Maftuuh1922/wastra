@@ -8,7 +8,7 @@ try:
         repo_id="maftuh-main/wastra-yolo-api",
         repo_type="space",
         filename="app.py",
-        token="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"
+        token="YOUR_HF_TOKEN_HERE"
     )
     shutil.copy(file_path, "c:/Users/Administrator/wastra/yolo_space_app.py")
     print("Successfully downloaded YOLO app.py!")
