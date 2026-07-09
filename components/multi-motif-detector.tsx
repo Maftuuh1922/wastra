@@ -71,7 +71,7 @@ const CONFIG = {
   STABLE_FRAMES_REQUIRED: 1,
   // How many frames a tracked object is allowed to "disappear" for before
   // we drop it (keeps boxes from flickering when a frame is missed/slow).
-  MISS_TOLERANCE_FRAMES: 2,
+  MISS_TOLERANCE_FRAMES: 4,
   // Baseline confidence needed to even consider a detection.
   // Sedikit dinaikkan untuk mengimbangi STABLE_FRAMES = 1 agar tidak terlalu banyak false positive.
   CONFIDENCE_THRESHOLD: 65,
@@ -127,7 +127,7 @@ function makeTrack(raw: RawDetection): TrackedDetection {
     confidence: raw.confidence,
     x: raw.x, y: raw.y, w: raw.w, h: raw.h,
     color: colorForLabel(rawLabel),
-    streak: raw.confidence >= 85 ? Math.max(CONFIG.STABLE_FRAMES_REQUIRED, 1) : 1,
+    streak: 1,
     missStreak: 0,
   }
 }
@@ -164,19 +164,10 @@ function updateTracks(prevTracks: TrackedDetection[], raws: RawDetection[]): Tra
         streak: Math.min(track.streak + 1, 999),
         missStreak: 0,
       })
-    } else {
-      let hasConflict = false
-      raws.forEach((r) => {
-        if (r.label.toLowerCase() !== track.label) {
-          if (boxIoU(track, r) > 0.4) hasConflict = true
-        }
-      })
-
-      if (!hasConflict && track.missStreak < CONFIG.MISS_TOLERANCE_FRAMES) {
-        next.push({ ...track, missStreak: track.missStreak + 1 })
-      }
-      // else: dropped, either because of conflict or too many consecutive misses
+    } else if (track.missStreak < CONFIG.MISS_TOLERANCE_FRAMES) {
+      next.push({ ...track, missStreak: track.missStreak + 1 })
     }
+    // else: dropped, too many consecutive misses
   }
 
   raws.forEach((r, i) => {
