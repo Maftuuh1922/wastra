@@ -38,9 +38,9 @@ def predict():
 
     try:
         image = Image.open(io.BytesIO(file.read()))
-        # Jalankan prediksi dengan model.predict, set threshold (misal conf=0.25)
+        # Jalankan prediksi dengan model.predict, set threshold (misal conf=0.35)
         # Threshold ini cukup longgar agar frontend bisa filter lebih lanjut
-        results = model.predict(image, conf=0.25, iou=0.45)
+        results = model.predict(image, conf=0.35, iou=0.45, agnostic_nms=True, imgsz=416, verbose=False)
         
         detections = []
         for r in results:
