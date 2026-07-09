@@ -73,8 +73,8 @@ const CONFIG = {
   // we drop it (keeps boxes from flickering when a frame is missed/slow).
   MISS_TOLERANCE_FRAMES: 4,
   // Baseline confidence needed to even consider a detection.
-  // Sedikit dinaikkan untuk mengimbangi STABLE_FRAMES = 1 agar tidak terlalu banyak false positive.
-  CONFIDENCE_THRESHOLD: 65,
+  // Dinaikkan ke 75% untuk mengurangi false positive (seperti objek Barong yang terdeteksi sebagai Cendrawasih).
+  CONFIDENCE_THRESHOLD: 75,
   // Label kelas negatif dari model — tidak boleh pernah ditampilkan.
   NEGATIVE_LABEL: 'bukan_batik',
   MAX_SIMULTANEOUS_DETECTIONS: 6,
@@ -391,10 +391,25 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     }
   }
 
-  const stableDetections = tracks
+  const rawStable = tracks
     .filter((t) => t.streak >= CONFIG.STABLE_FRAMES_REQUIRED)
     .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, CONFIG.MAX_SIMULTANEOUS_DETECTIONS)
+
+  // Frontend Agnostic NMS: Hapus box yang menumpuk (IoU > 0.4) agar
+  // 1 titik motif hanya menampilkan 1 label dengan confidence tertinggi.
+  const nmsStable: TrackedDetection[] = []
+  for (const t of rawStable) {
+    let overlap = false
+    for (const kept of nmsStable) {
+      if (boxIoU(t, kept) > 0.4) {
+        overlap = true
+        break
+      }
+    }
+    if (!overlap) nmsStable.push(t)
+  }
+
+  const stableDetections = nmsStable.slice(0, CONFIG.MAX_SIMULTANEOUS_DETECTIONS)
 
   const viewDetail = (index: number) => {
     const video = videoRef.current
