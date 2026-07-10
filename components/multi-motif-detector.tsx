@@ -203,6 +203,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const tracksRef = useRef<TrackedDetection[]>([])
   const consecutiveErrorsRef = useRef(0)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const hfClientRef = useRef<any>(null)
 
   useEffect(() => {
     isMountedRef.current = true
@@ -311,7 +312,10 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
         canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/jpeg', 0.6)
       })
       
-      const client = await Client.connect(CONFIG.API_URL)
+      if (!hfClientRef.current) {
+        hfClientRef.current = await Client.connect(CONFIG.API_URL)
+      }
+      const client = hfClientRef.current
       const result = await client.predict("/predict", [blob])
       const apiResponse = (result.data as any)[0]
       
