@@ -10,7 +10,7 @@ export function BenchmarkChart() {
   const isInView = useInView(containerRef, { once: true, margin: "-10%" })
 
   const data = [
-    { name: 'MobileNetV3', role: 'Scan Cepat', fps: 92, accuracy: 94.8 },
+    { name: 'MobileNetV3 (V2+V3 Ensemble)', role: 'Scan Cepat', fps: 92, accuracy: 96.5 },
     { name: 'YOLOv8', role: 'Multi-Motif', fps: 45, accuracy: 97.8 },
   ]
 

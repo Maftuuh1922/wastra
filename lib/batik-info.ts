@@ -56,6 +56,14 @@ export const BATIK_INFO: Record<string, BatikDetail> = {
     source: 'Balai Besar Kerajinan dan Batik (BBKB) Kementerian Perindustrian',
     sourceUrl: 'https://bbkb.kemenperin.go.id/'
   },
+  'batik-ikat_celup': {
+    name: 'Batik Ikat Celup',
+    origin: 'Nusantara',
+    meaning: 'Kebebasan berekspresi dan dinamika kreativitas perajin.',
+    description: 'Varian dari teknik celup ikat (jumputan atau sasirangan) yang menggunakan ikatan benang atau tali untuk menghalangi warna masuk ke serat kain, menciptakan pola-pola organis bersilangan yang indah.',
+    source: 'Balai Besar Kerajinan dan Batik',
+    sourceUrl: 'https://bbkb.kemenperin.go.id/'
+  },
   'batik-ceplok': {
     name: 'Batik Ceplok',
     origin: 'Yogyakarta & Surakarta',
@@ -151,6 +159,14 @@ export const BATIK_INFO: Record<string, BatikDetail> = {
     description: 'Sangat ikonik dengan warna "Abang Getih Pitik" (merah darah ayam). Motifnya memadukan unsur Tiongkok (burung hong, naga, koin emas) dengan ornamen Jawa pesisiran.',
     source: 'Museum Batik Lasem & Warisan Budaya Takbenda RI',
     sourceUrl: 'https://warisanbudaya.kemdikbud.go.id/'
+  },
+  'batik-madura_mataketeran': {
+    name: 'Batik Mata Keteran',
+    origin: 'Madura, Jawa Timur',
+    meaning: 'Ketajaman visi, kewaspadaan, dan keindahan alam pesisir.',
+    description: 'Motif klasik khas Madura yang terinspirasi dari mata burung perkutut (mata keteran). Menyimbolkan ketajaman pandangan hidup dan kewaspadaan masyarakat pesisir Madura dalam mengarungi lautan.',
+    source: 'Dinas Pariwisata dan Kebudayaan Kabupaten Pamekasan',
+    sourceUrl: 'https://pamekasankab.go.id/'
   },
   'batik-maluku_pala': {
     name: 'Batik Maluku Pala',

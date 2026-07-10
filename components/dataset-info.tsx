@@ -31,8 +31,8 @@ export function DatasetInfo() {
           {
             icon: <ImageIcon className="w-5 h-5" />,
             label: 'Total Gambar Pelatihan',
-            value: '2.600+',
-            desc: 'Termasuk oversampling & augmentasi'
+            value: '5.985',
+            desc: 'Rata-rata 157 gambar per kelas'
           },
           {
             icon: <Layers className="w-5 h-5" />,
@@ -43,14 +43,14 @@ export function DatasetInfo() {
           {
             icon: <Cpu className="w-5 h-5" />,
             label: 'Arsitektur AI',
-            value: 'YOLOv8',
-            desc: 'Finetuned @ 768px resolution'
+            value: 'MobileNetV3',
+            desc: 'V2 + V3 Ensemble Architecture'
           },
           {
             icon: <CheckCircle2 className="w-5 h-5" />,
             label: 'Metodologi',
-            value: 'Mosaic & Scaling',
-            desc: 'Fokus pada lokalisasi in-the-wild'
+            value: 'Ensemble (No TTA)',
+            desc: 'Optimasi performa & akurasi tinggi'
           }
         ].map((stat, i) => (
           <ScrollReveal key={i} delay={i * 0.1}>
