@@ -6,6 +6,7 @@ import { MotifCatalog } from '@/components/motif-catalog'
 import { Faq } from '@/components/faq'
 import { BenchmarkChart } from '@/components/benchmark-chart'
 import { CulturalTrends } from '@/components/cultural-trends'
+import { DatasetInfo } from '@/components/dataset-info'
 import { ResearchHub } from '@/components/research-hub'
 import { InteractiveBatikMap } from '@/components/interactive-batik-map'
 import { HowItWorks } from '@/components/how-it-works'
@@ -132,6 +133,11 @@ export default function HomePage() {
           <div className="relative z-10">
             <BenchmarkChart />
           </div>
+        </div>
+
+        {/* Plain Block DatasetInfo */}
+        <div className="relative z-10 bg-background">
+          <DatasetInfo />
         </div>
 
         {/* Plain Block 2 */}

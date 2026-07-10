@@ -11,7 +11,7 @@ export function BenchmarkChart() {
 
   const data = [
     { name: 'MobileNetV3', role: 'Scan Cepat', fps: 92, accuracy: 94.8 },
-    { name: 'YOLOv8', role: 'Multi-Motif', fps: 45, accuracy: 91.5 },
+    { name: 'YOLOv8', role: 'Multi-Motif', fps: 45, accuracy: 97.8 },
   ]
 
   // Using 80 blocks total for the progress bar (1.25% per block) on desktop
