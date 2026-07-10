@@ -31,7 +31,7 @@ export function DatasetInfo() {
           {
             icon: <ImageIcon className="w-5 h-5" />,
             label: 'Total Gambar Pelatihan',
-            value: '5.230+',
+            value: '2.600+',
             desc: 'Termasuk oversampling & augmentasi'
           },
           {
