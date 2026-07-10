@@ -5,6 +5,7 @@ import {
   Camera, Loader2, RotateCcw, Zap, ZapOff, SwitchCamera,
   Scan, Search, ArrowRight, X, ChevronLeft, ChevronRight, WifiOff
 } from 'lucide-react'
+import { getBatikDetail } from '@/lib/batik-info'
 
 type DetectState = 'idle' | 'camera_active' | 'analyzing' | 'camera_error' | 'detail_view'
 
@@ -25,36 +26,14 @@ interface TrackedDetection extends Box {
   label: string
   displayLabel: string
   desc: string
+  origin: string
+  meaning: string
+  source: string
+  sourceUrl: string
   confidence: number
   color: string
   streak: number
   missStreak: number
-}
-
-// --- Reference copy for readers of this file: known motif descriptions ------
-// Keys are the raw class names as produced by the YOLO model (lowercase,
-// "batik-" prefixed), matching data.yaml. Unknown classes fall back to a
-// generic line so the UI never shows an empty description.
-const BATIK_INFO: Record<string, string> = {
-  'batik-aceh': 'Batik Aceh terkenal dengan warna-warna cerah dan motif yang kental dengan nuansa Islami dan alam, seperti pintu Aceh dan tolak angin.',
-  'batik-celup': 'Batik celup (tie-dye) dibuat dengan teknik ikat dan celup. Menghasilkan pola tak beraturan yang unik dan warna yang bergradasi.',
-  'batik-jawa_barat_megamendung': 'Motif Mega Mendung asal Cirebon melambangkan awan pembawa hujan sebagai lambang kesuburan dan pemberi kehidupan.',
-  'batik-gentongan': 'Batik Gentongan asal Madura dibuat dengan merendam kain dalam gentong. Motifnya pesisir dengan warna berani seperti merah dan biru.',
-  'batik-garutan': 'Batik Garutan dari Jawa Barat memiliki ciri khas warna cerah dan motif flora fauna yang sederhana namun elegan.',
-  'batik-parang': 'Motif Parang adalah salah satu motif tertua di Indonesia, melambangkan ombak lautan yang tak pernah berhenti bergerak, simbol pantang menyerah.',
-  'batik-kawung': 'Motif Kawung berbentuk bulat lonjong seperti buah aren, melambangkan kesucian, umur panjang, dan kesempurnaan.',
-  'batik-sogan': 'Batik Sogan khas Solo dan Jogja berwarna kecoklatan. Melambangkan kerendahan hati dan nilai-nilai klasik keraton.',
-  'batik-lasem': 'Batik Lasem merupakan akulturasi budaya Tionghoa dan Jawa, terkenal dengan warna merah darah ayam yang khas.',
-  'batik-sido': 'Motif Sido berbentuk susunan belah ketupat berulang, biasa dipakai dalam upacara adat Jawa sebagai simbol harapan baik.',
-  'batik-ceplok': 'Motif Ceplok tersusun dari bentuk geometris berulang secara radial, melambangkan keteraturan dan keseimbangan hidup.',
-  'batik-tambal': 'Motif Tambal menggabungkan beberapa motif kecil dalam satu kain, dipercaya dapat membawa kesembuhan dan energi baru.',
-  'batik-dayak': 'Batik Dayak dari Kalimantan sarat garis tegas dan bentuk simbolik hewan serta alam, mencerminkan kedekatan dengan alam.',
-  'batik-bali': 'Batik Bali menonjolkan ornamen khas pura dan detail simetris yang terinspirasi dari seni ukir tradisional Bali.',
-  'batik-betawi': 'Batik Betawi memakai warna kontras yang berani, mencerminkan karakter budaya Jakarta yang terbuka dan dinamis.',
-  'batik-pekalongan': 'Batik Pekalongan dikenal sebagai batik pesisir dengan warna cerah dan motif bunga yang meriah.',
-  'batik-priangan': 'Batik Priangan dari Jawa Barat memadukan motif bunga dan garis geometris dengan sentuhan warna yang lembut.',
-  'batik-sekar': 'Motif Sekar menampilkan sebaran bunga-bunga kecil berulang, melambangkan keindahan dan kelembutan.',
-  'batik-cendrawasih': 'Motif Cendrawasih menggambarkan siluet burung cendrawasih, simbol keindahan alam Papua.',
 }
 
 // --- Tunables ----------------------------------------------------------------
@@ -91,13 +70,6 @@ function colorForLabel(label: string): string {
   return DETECTION_COLORS[hash % DETECTION_COLORS.length]
 }
 
-function toDisplayLabel(rawLabel: string): string {
-  return rawLabel
-    .replace(/^batik-/, '')
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
-
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t
 }
@@ -118,11 +90,17 @@ function boxIoU(a: Box, b: Box): number {
 
 function makeTrack(raw: RawDetection): TrackedDetection {
   const rawLabel = raw.label.toLowerCase()
+  const detail = getBatikDetail(rawLabel)
+  
   return {
     id: `${rawLabel}-${Math.random().toString(36).slice(2, 9)}`,
     label: rawLabel,
-    displayLabel: toDisplayLabel(rawLabel),
-    desc: BATIK_INFO[rawLabel] ?? 'Batik ini memiliki corak unik Nusantara.',
+    displayLabel: detail.name,
+    desc: detail.description,
+    origin: detail.origin,
+    meaning: detail.meaning,
+    source: detail.source,
+    sourceUrl: detail.sourceUrl,
     confidence: raw.confidence,
     x: raw.x, y: raw.y, w: raw.w, h: raw.h,
     color: colorForLabel(rawLabel),
@@ -731,6 +709,19 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
               <p className="text-muted-foreground leading-relaxed text-lg md:text-xl font-medium mt-2">
                 {bestDetection?.desc ?? 'Tidak ada detail untuk motif ini.'}
               </p>
+
+              {bestDetection && (
+                <div className="mt-6 flex flex-col gap-4 text-sm text-foreground/80 bg-secondary/20 p-6 rounded-2xl border border-border">
+                  <p><strong className="text-foreground">Asal Daerah:</strong> {bestDetection.origin}</p>
+                  <p><strong className="text-foreground">Makna Filosofis:</strong> {bestDetection.meaning}</p>
+                  <p>
+                    <strong className="text-foreground">Sumber Literatur:</strong>{' '}
+                    <a href={bestDetection.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-teal hover:underline italic">
+                      {bestDetection.source}
+                    </a>
+                  </p>
+                </div>
+              )}
 
               <div className="mt-8 pt-8 border-t border-border flex flex-col sm:flex-row items-center gap-4">
                 <button
