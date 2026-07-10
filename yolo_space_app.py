@@ -12,8 +12,8 @@ CORS(app)
 print("Memulai YOLOv8 API Server...")
 
 try:
-    print("Mendownload yolov8s_batik_det_v3.pt dari maftuh-main/wastra-yolov8-detector...")
-    model_path = hf_hub_download(repo_id="maftuh-main/wastra-yolov8-detector", filename="yolov8s_batik_det_v3.pt")
+    print("Mendownload best (3).pt dari maftuh-main/wastra-yolov8-detector...")
+    model_path = hf_hub_download(repo_id="maftuh-main/wastra-yolov8-detector", filename="best (3).pt")
     model = YOLO(model_path)
     print("Model YOLO berhasil dimuat!")
 except Exception as e:

@@ -5,6 +5,7 @@ import {
   Camera, Loader2, RotateCcw, Zap, ZapOff, SwitchCamera,
   Scan, Search, ArrowRight, X, ChevronLeft, ChevronRight, WifiOff
 } from 'lucide-react'
+import { Client } from "@gradio/client"
 
 type DetectState = 'idle' | 'camera_active' | 'analyzing' | 'camera_error' | 'detail_view'
 
@@ -60,7 +61,7 @@ const BATIK_INFO: Record<string, string> = {
 // --- Tunables ----------------------------------------------------------------
 // Centralised here so future tweaks don't require hunting through the code.
 const CONFIG = {
-  API_URL: 'https://maftuh-main-wastra-yolo-api.hf.space/predict',
+  API_URL: 'maftuh-main/wastra-yolo-gradio',
   MAX_FRAME_SIZE: 416,          // matches YOLO's input size, keeps upload small/fast
   SCAN_INTERVAL_MS: 250,        // time between frames when things are healthy
   SCAN_INTERVAL_BACKOFF_MS: 1500, // slower polling while the API is failing
@@ -309,12 +310,11 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/jpeg', 0.6)
       })
-      const formData = new FormData()
-      formData.append('image', blob, 'capture.jpg')
-
-      const res = await fetch(CONFIG.API_URL, { method: 'POST', body: formData, signal: controller.signal })
-      if (!res.ok) throw new Error(`API error ${res.status}`)
-      const apiResponse = await res.json()
+      
+      const client = await Client.connect(CONFIG.API_URL)
+      const result = await client.predict("/predict", [blob])
+      const apiResponse = (result.data as any)[0]
+      
       if (!isMountedRef.current) return
 
       consecutiveErrorsRef.current = 0
