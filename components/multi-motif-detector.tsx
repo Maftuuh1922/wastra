@@ -318,7 +318,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       const client = hfClientRef.current
       const result = await client.predict("/predict", [blob])
       const apiResponse = (result.data as any)[0]
-      // console.log("Gradio API Response:", apiResponse)
+      console.log("Gradio API Response:", apiResponse)
       
       if (!isMountedRef.current) return
 
