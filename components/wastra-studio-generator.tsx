@@ -10,6 +10,7 @@ type FeedItem = {
   prompt: string
   image: string | null
   isGenerating: boolean
+  error?: string | null
 }
 
 const sampleImages = [
@@ -87,7 +88,7 @@ export function WastraStudioGenerator({ externalPrompt, trigger }: WastraStudioG
         body: JSON.stringify({ prompt: trimmed })
       })
 
-      if (!response.ok) throw new Error('API Error')
+      if (!response.ok) throw new Error(`API Error (${response.status})`)
 
       const blob = await response.blob()
       
@@ -98,7 +99,7 @@ export function WastraStudioGenerator({ externalPrompt, trigger }: WastraStudioG
         
         setFeed(prev => prev.map(item => 
           item.id === newItemId 
-            ? { ...item, image: base64data, isGenerating: false } 
+            ? { ...item, image: base64data, isGenerating: false, error: null } 
             : item
         ))
 
@@ -112,25 +113,20 @@ export function WastraStudioGenerator({ externalPrompt, trigger }: WastraStudioG
           window.dispatchEvent(new Event('history-updated'))
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to generate image:', error)
-      const fallbackUrl = sampleImages[Math.floor(Math.random() * sampleImages.length)]
+      // Tampilkan pesan error yang jelas, jangan fallback diam-diam ke sample image
+      const errorMsg = error?.message?.includes('fetch') || error?.message?.includes('network')
+        ? 'Koneksi gagal. Pastikan internet stabil, lalu coba lagi.'
+        : error?.message?.includes('500') || error?.message?.includes('503')
+        ? 'Server sedang startup atau overload. Coba lagi dalam 30 detik.'
+        : `Gagal membuat gambar: ${error?.message ?? 'Unknown error'}`
       
       setFeed(prev => prev.map(item => 
         item.id === newItemId 
-          ? { ...item, image: fallbackUrl, isGenerating: false } 
+          ? { ...item, image: null, isGenerating: false, error: errorMsg } 
           : item
       ))
-      
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        await supabase.from('history').insert({
-          user_id: session.user.id,
-          prompt: trimmed,
-          image_url: fallbackUrl
-        })
-        window.dispatchEvent(new Event('history-updated'))
-      }
     }
   }
 
@@ -197,8 +193,21 @@ export function WastraStudioGenerator({ externalPrompt, trigger }: WastraStudioG
                   <Loader2 className="h-6 w-6 animate-spin text-teal shrink-0" aria-hidden="true" />
                   <div className="flex flex-col gap-1">
                     <p className="text-sm font-semibold text-foreground">Sedang meracik pola...</p>
-                    <p className="text-xs text-muted-foreground">Proses memakan waktu 1-2 menit</p>
+                    <p className="text-xs text-muted-foreground">Proses memakan waktu 1–3 menit, mohon tunggu</p>
                   </div>
+                </div>
+              ) : item.error ? (
+                <div className="flex flex-col gap-3 rounded-2xl border border-red-500/30 bg-red-500/5 p-5 shadow-sm w-full md:w-[400px]">
+                  <p className="text-sm font-semibold text-red-500">Gagal Membuat Gambar</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{item.error}</p>
+                  <button
+                    type="button"
+                    onClick={() => generate(item.prompt, item.id + '-retry')}
+                    className="inline-flex w-fit items-center gap-2 rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Coba Lagi
+                  </button>
                 </div>
               ) : (
                 <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm w-full md:w-[400px]">

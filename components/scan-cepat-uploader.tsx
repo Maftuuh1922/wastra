@@ -18,10 +18,12 @@ export function ScanCepatUploader() {
   const [state, setState] = useState<ScanState>('idle')
   const [imageSrc, setImageSrc] = useState<string | null>(null)
   const [resultData, setResultData] = useState<any>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const startAnalysis = async (src: string) => {
     setImageSrc(src)
+    setErrorMsg(null)
     setState('analyzing')
     
     try {
@@ -36,11 +38,12 @@ export function ScanCepatUploader() {
       
       const res = await fetch(SPACE_URL, {
         method: 'POST',
-        body: formData
+        body: formData,
+        signal: AbortSignal.timeout(45000), // 45s timeout untuk cold start
       })
       
       if (!res.ok) {
-        throw new Error('API Error')
+        throw new Error(`Server error: ${res.status}`)
       }
       
       const apiResponse = await res.json()
@@ -50,18 +53,23 @@ export function ScanCepatUploader() {
         setResultData({
           motif: apiResponse.prediction.replace('batik-', '').replace(/^\w/, (c: string) => c.toUpperCase()),
           confidence: Math.round(apiResponse.confidence * 100),
-          region: 'Indonesia', // Default region
-          philosophy: 'Motif batik yang indah dan penuh makna budaya.' // Default philosophy
+          region: 'Indonesia',
+          philosophy: 'Motif batik yang indah dan penuh makna budaya.'
         })
+        setState('done')
       } else {
-        setResultData(demoResult)
+        throw new Error('Respon tidak valid dari server')
       }
-      setState('done')
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to classify image:', err)
-      // Fallback to demo mode for testing UI
-      setResultData(demoResult)
-      setState('done')
+      const isTimeout = err?.name === 'TimeoutError' || err?.message?.includes('timeout')
+      const msg = isTimeout
+        ? 'Server AI sedang startup. Coba lagi dalam 30 detik.'
+        : err?.message?.includes('fetch') || err?.name === 'TypeError'
+        ? 'Koneksi gagal. Periksa koneksi internet Anda.'
+        : `Gagal menganalisis: ${err?.message ?? 'Unknown error'}`
+      setErrorMsg(msg)
+      setState('idle')
     }
   }
 
@@ -75,6 +83,7 @@ export function ScanCepatUploader() {
   const reset = () => {
     setState('idle')
     setImageSrc(null)
+    setErrorMsg(null)
     if (inputRef.current) inputRef.current.value = ''
   }
 
@@ -82,6 +91,21 @@ export function ScanCepatUploader() {
     <div className="mx-auto max-w-2xl">
       {state === 'idle' && (
         <div className="flex flex-col gap-4">
+          {errorMsg && (
+            <div className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/5 px-5 py-4">
+              <div className="flex flex-col gap-2 flex-1">
+                <p className="text-sm font-semibold text-red-500">Gagal Menganalisis</p>
+                <p className="text-xs text-muted-foreground">{errorMsg}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => imageSrc && startAnalysis(imageSrc)}
+                className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary transition-colors"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          )}
           <label
             className="group relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-[2.5rem] border-2 border-dashed border-teal/40 bg-gradient-to-b from-card/80 to-card/30 px-6 py-20 text-center transition-all duration-300 hover:border-teal hover:bg-teal/5 hover:shadow-[0_8px_40px_rgba(69,133,136,0.12)] overflow-hidden"
             onDragOver={(e) => e.preventDefault()}

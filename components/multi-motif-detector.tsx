@@ -5,6 +5,7 @@ import {
   Camera, Loader2, RotateCcw, Zap, ZapOff, SwitchCamera,
   Scan, Search, ArrowRight, X, ChevronLeft, ChevronRight, WifiOff
 } from 'lucide-react'
+
 import { Client } from "@gradio/client"
 
 type DetectState = 'idle' | 'camera_active' | 'analyzing' | 'camera_error' | 'detail_view'
@@ -189,6 +190,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const [mediaSize, setMediaSize] = useState({ w: 0, h: 0 })
   const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null)
   const [networkIssue, setNetworkIssue] = useState(false)
+  const [isColdStart, setIsColdStart] = useState(false)
   const [reducedMotion, setReducedMotion] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -312,8 +314,12 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
         canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/jpeg', 0.6)
       })
       
+      // Selalu reconnect jika client null (termasuk setelah error reset)
       if (!hfClientRef.current) {
+        // Cold start ZeroGPU bisa butuh 20-60 detik — beri tahu user
+        if (consecutiveErrorsRef.current >= 2) setIsColdStart(true)
         hfClientRef.current = await Client.connect(CONFIG.API_URL)
+        setIsColdStart(false)
       }
       const client = hfClientRef.current
       const result = await client.predict("/predict", [blob])
@@ -324,6 +330,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
 
       consecutiveErrorsRef.current = 0
       setNetworkIssue(false)
+      setIsColdStart(false)
 
       const rawDetections: RawDetection[] = Array.isArray(apiResponse?.detections) ? apiResponse.detections : []
       // Model klasifikasi baru sengaja mengembalikan box full-frame, jadi
@@ -339,6 +346,8 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
         console.error("YOLO Detection Error:", err)
+        // Reset client agar tidak reuse client yang sudah rusak/expired
+        hfClientRef.current = null
       }
       if (err?.name !== 'AbortError' && isMountedRef.current) {
         consecutiveErrorsRef.current += 1
@@ -594,7 +603,13 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
 
           {/* Footer Bar */}
           <div className="w-full bg-black p-6 text-center z-20 pb-safe space-y-2">
-            {networkIssue && (
+            {isColdStart && (
+              <p className="flex items-center justify-center gap-2 text-blue-400 text-xs font-medium animate-pulse">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Server AI sedang startup… mohon tunggu 30–60 detik
+              </p>
+            )}
+            {networkIssue && !isColdStart && (
               <p className="flex items-center justify-center gap-2 text-amber-400 text-xs font-medium">
                 <WifiOff className="w-3.5 h-3.5" />
                 Koneksi ke server tidak stabil, mencoba lagi…
@@ -603,6 +618,8 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
             <p className="text-white/80 text-sm font-medium tracking-wide">
               {stableDetections.length > 0
                 ? `${stableDetections.length} motif ditemukan — ketuk salah satu untuk lihat detail`
+                : isColdStart
+                ? 'Menghubungkan ke server AI (ZeroGPU)…'
                 : 'Ketuk layar untuk fokus • Beri jarak ~15cm dari motif'}
             </p>
           </div>
