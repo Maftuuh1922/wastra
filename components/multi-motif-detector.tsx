@@ -61,20 +61,19 @@ const BATIK_INFO: Record<string, string> = {
 // Centralised here so future tweaks don't require hunting through the code.
 const CONFIG = {
   API_URL: 'https://maftuh-main-wastra-yolo-api.hf.space/predict',
-  MAX_FRAME_SIZE: 416,          // matches YOLO's input size, keeps upload small/fast
+  MAX_FRAME_SIZE: 640,          // matches YOLO's input size, keeps upload small/fast
   SCAN_INTERVAL_MS: 800,        // Ditambah jadi 800ms agar tidak spam API (mencegah Rate Limit / Timeout)
   SCAN_INTERVAL_BACKOFF_MS: 2000, // Slower polling while API is failing
   // A single low-confidence frame should never be enough to label something.
   // A detection must survive this many *consecutive* frames before it's shown.
-  // Diubah menjadi 1 agar hasil deteksi langsung muncul secara responsif
-  // tanpa harus menunggu 2 frame (yang memakan waktu 2-4 detik di HF Space).
-  STABLE_FRAMES_REQUIRED: 1,
+  // Dikembalikan ke nilai yang lebih aman (3) agar hasil deteksi lebih stabil dan mengurangi false positive.
+  STABLE_FRAMES_REQUIRED: 3,
   // How many frames a tracked object is allowed to "disappear" for before
   // we drop it (keeps boxes from flickering when a frame is missed/slow).
   MISS_TOLERANCE_FRAMES: 4,
   // Baseline confidence needed to even consider a detection.
-  // Diturunkan ke 40% agar deteksi live camera yang mungkin buram tetap bisa tertangkap.
-  CONFIDENCE_THRESHOLD: 40,
+  // Dinaikkan ke 60% agar tebakan yang kurang yakin tidak ditampilkan.
+  CONFIDENCE_THRESHOLD: 60,
   // Label kelas negatif dari model — tidak boleh pernah ditampilkan.
   NEGATIVE_LABEL: 'bukan_batik',
   MAX_SIMULTANEOUS_DETECTIONS: 6,
@@ -259,6 +258,10 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     pixelW = Math.max(0, pixelW)
     pixelH = Math.max(0, pixelH)
 
+    if (facingMode === 'user') {
+      pixelX = cw - (pixelX + pixelW)
+    }
+
     // Cosmetic only: a box spanning almost the whole screen looks like a bug
     // rather than a scan reticle, so we shrink it visually toward its center.
     if (pixelW * pixelH > cw * ch * 0.7) {
@@ -306,7 +309,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
 
     try {
       const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/jpeg', 0.6)
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/jpeg', 0.8)
       })
 
       const formData = new FormData()
