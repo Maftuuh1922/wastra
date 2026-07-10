@@ -318,6 +318,7 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       const client = hfClientRef.current
       const result = await client.predict("/predict", [blob])
       const apiResponse = (result.data as any)[0]
+      // console.log("Gradio API Response:", apiResponse)
       
       if (!isMountedRef.current) return
 
@@ -336,6 +337,9 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       tracksRef.current = updateTracks(tracksRef.current, candidates)
       setTracks(tracksRef.current)
     } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        console.error("YOLO Detection Error:", err)
+      }
       if (err?.name !== 'AbortError' && isMountedRef.current) {
         consecutiveErrorsRef.current += 1
         setNetworkIssue(consecutiveErrorsRef.current >= CONFIG.MAX_CONSECUTIVE_ERRORS)
