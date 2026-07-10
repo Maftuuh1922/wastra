@@ -124,7 +124,7 @@ export async function CulturalTrends() {
               key={idx}
               className="group overflow-hidden rounded-2xl border border-border bg-card flex flex-col"
             >
-              <a href={t.link} target="_blank" rel="noreferrer" className="flex-1 flex flex-col">
+              <a href={`/baca?url=${encodeURIComponent(t.link)}`} className="flex-1 flex flex-col">
                 <div className="aspect-[4/3] overflow-hidden bg-muted">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
