@@ -6,8 +6,6 @@ import {
   Scan, Search, ArrowRight, X, ChevronLeft, ChevronRight, WifiOff
 } from 'lucide-react'
 
-import { Client } from "@gradio/client"
-
 type DetectState = 'idle' | 'camera_active' | 'analyzing' | 'camera_error' | 'detail_view'
 
 interface Box {
@@ -62,10 +60,10 @@ const BATIK_INFO: Record<string, string> = {
 // --- Tunables ----------------------------------------------------------------
 // Centralised here so future tweaks don't require hunting through the code.
 const CONFIG = {
-  API_URL: 'maftuh-main/wastra-yolo-gradio',
+  API_URL: 'https://maftuh-main-wastra-yolo-api.hf.space/predict',
   MAX_FRAME_SIZE: 416,          // matches YOLO's input size, keeps upload small/fast
-  SCAN_INTERVAL_MS: 250,        // time between frames when things are healthy
-  SCAN_INTERVAL_BACKOFF_MS: 1500, // slower polling while the API is failing
+  SCAN_INTERVAL_MS: 800,        // Ditambah jadi 800ms agar tidak spam API (mencegah Rate Limit / Timeout)
+  SCAN_INTERVAL_BACKOFF_MS: 2000, // Slower polling while API is failing
   // A single low-confidence frame should never be enough to label something.
   // A detection must survive this many *consecutive* frames before it's shown.
   // Diubah menjadi 1 agar hasil deteksi langsung muncul secara responsif
@@ -75,8 +73,8 @@ const CONFIG = {
   // we drop it (keeps boxes from flickering when a frame is missed/slow).
   MISS_TOLERANCE_FRAMES: 4,
   // Baseline confidence needed to even consider a detection.
-  // Dinaikkan ke 75% untuk mengurangi false positive (seperti objek Barong yang terdeteksi sebagai Cendrawasih).
-  CONFIDENCE_THRESHOLD: 75,
+  // Diturunkan ke 40% agar deteksi live camera yang mungkin buram tetap bisa tertangkap.
+  CONFIDENCE_THRESHOLD: 40,
   // Label kelas negatif dari model — tidak boleh pernah ditampilkan.
   NEGATIVE_LABEL: 'bukan_batik',
   MAX_SIMULTANEOUS_DETECTIONS: 6,
@@ -205,7 +203,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const tracksRef = useRef<TrackedDetection[]>([])
   const consecutiveErrorsRef = useRef(0)
   const abortControllerRef = useRef<AbortController | null>(null)
-  const hfClientRef = useRef<any>(null)
 
   useEffect(() => {
     isMountedRef.current = true
@@ -308,23 +305,25 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     abortControllerRef.current = controller
 
     try {
-      // toBlob avoids an unnecessary base64 encode/decode round-trip that
-      // toDataURL()+fetch() used to do on every single frame.
       const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/jpeg', 0.6)
       })
-      
-      // Selalu reconnect jika client null (termasuk setelah error reset)
-      if (!hfClientRef.current) {
-        // Cold start ZeroGPU bisa butuh 20-60 detik — beri tahu user
-        if (consecutiveErrorsRef.current >= 2) setIsColdStart(true)
-        hfClientRef.current = await Client.connect(CONFIG.API_URL)
-        setIsColdStart(false)
+
+      const formData = new FormData()
+      formData.append('image', blob, 'frame.jpg')
+
+      const response = await fetch(CONFIG.API_URL, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`)
       }
-      const client = hfClientRef.current
-      const result = await client.predict("/predict", [blob])
-      const apiResponse = (result.data as any)[0]
-      console.log("Gradio API Response:", apiResponse)
+
+      const apiResponse = await response.json()
+      console.log("Raw API Response:", apiResponse)
       
       if (!isMountedRef.current) return
 
@@ -333,10 +332,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       setIsColdStart(false)
 
       const rawDetections: RawDetection[] = Array.isArray(apiResponse?.detections) ? apiResponse.detections : []
-      // Model klasifikasi baru sengaja mengembalikan box full-frame, jadi
-      // heuristik "box besar = mencurigakan" yang lama justru membuang
-      // prediksi yang benar. Penolakan objek acak kini ditangani model
-      // lewat kelas "bukan_batik".
       const candidates = rawDetections.filter(
         (d) => d.label !== CONFIG.NEGATIVE_LABEL && d.confidence >= CONFIG.CONFIDENCE_THRESHOLD,
       )
@@ -346,8 +341,6 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
         console.error("YOLO Detection Error:", err)
-        // Reset client agar tidak reuse client yang sudah rusak/expired
-        hfClientRef.current = null
       }
       if (err?.name !== 'AbortError' && isMountedRef.current) {
         consecutiveErrorsRef.current += 1
