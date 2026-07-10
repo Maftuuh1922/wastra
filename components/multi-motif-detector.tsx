@@ -67,13 +67,13 @@ const CONFIG = {
   // A single low-confidence frame should never be enough to label something.
   // A detection must survive this many *consecutive* frames before it's shown.
   // Dikembalikan ke nilai yang lebih aman (3) agar hasil deteksi lebih stabil dan mengurangi false positive.
-  STABLE_FRAMES_REQUIRED: 3,
+  STABLE_FRAMES_REQUIRED: 4,
   // How many frames a tracked object is allowed to "disappear" for before
   // we drop it (keeps boxes from flickering when a frame is missed/slow).
   MISS_TOLERANCE_FRAMES: 4,
   // Baseline confidence needed to even consider a detection.
-  // Dinaikkan ke 60% agar tebakan yang kurang yakin tidak ditampilkan.
-  CONFIDENCE_THRESHOLD: 60,
+  // Dinaikkan ke 75% untuk menekan false positive (mendeteksi objek non-batik).
+  CONFIDENCE_THRESHOLD: 75,
   // Label kelas negatif dari model — tidak boleh pernah ditampilkan.
   NEGATIVE_LABEL: 'bukan_batik',
   MAX_SIMULTANEOUS_DETECTIONS: 6,
