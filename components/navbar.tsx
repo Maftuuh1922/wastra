@@ -63,19 +63,6 @@ export function Navbar() {
             Katalog
           </Link>
           <Link
-            href="/#riset"
-            className={`text-sm font-medium transition-colors hover:opacity-70 text-foreground`}
-          >
-            Riset
-          </Link>
-          <Link
-            href="/#faq"
-            className={`text-sm font-medium transition-colors hover:opacity-70 text-foreground`}
-          >
-            FAQ
-          </Link>
-
-          <Link
             href="/ai"
             className="flex items-center gap-2 rounded-full bg-teal px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-teal/90 shadow-md hover:scale-105"
           >
@@ -106,8 +93,6 @@ export function Navbar() {
         {[
           { href: '/ai', label: 'Coba Wastra AI' },
           { href: '/#katalog', label: 'Katalog' },
-          { href: '/#riset', label: 'Riset' },
-          { href: '/#faq', label: 'FAQ' },
         ].map((item) => (
           <Link
             key={item.href}
