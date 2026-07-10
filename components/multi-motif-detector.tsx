@@ -173,6 +173,9 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
   const containerRef = useRef<HTMLDivElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [fps, setFps] = useState(0)
+  const [latency, setLatency] = useState(0)
+  const fpsTrackerRef = useRef({ frames: 0, lastTime: 0 })
 
   const isScanningRef = useRef(false)
   const isFetchingRef = useRef(false)
@@ -285,6 +288,8 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
     const controller = new AbortController()
     abortControllerRef.current = controller
 
+    const startTime = performance.now()
+
     try {
       const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/jpeg', 0.8)
@@ -304,7 +309,23 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
       }
 
       const apiResponse = await response.json()
-      console.log("Raw API Response:", apiResponse)
+      
+      const endTime = performance.now()
+      if (isMountedRef.current) {
+        setLatency(Math.round(endTime - startTime))
+        
+        // Calculate API polling FPS
+        fpsTrackerRef.current.frames += 1
+        const now = performance.now()
+        const delta = now - fpsTrackerRef.current.lastTime
+        if (delta >= 1000) {
+          if (fpsTrackerRef.current.lastTime > 0) {
+            setFps(Math.round((fpsTrackerRef.current.frames * 1000) / delta))
+          }
+          fpsTrackerRef.current.frames = 0
+          fpsTrackerRef.current.lastTime = now
+        }
+      }
       
       if (!isMountedRef.current) return
 
@@ -493,6 +514,10 @@ export function MultiMotifDetector({ onFallback }: { onFallback?: () => void }) 
             <button onClick={handleFallback} className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg border border-white/10">
               <X className="h-6 w-6" />
             </button>
+            <div className="flex flex-col items-center justify-center bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10 pointer-events-auto">
+              <span className="text-[10px] uppercase font-bold text-white/70">Inference (YOLOv8)</span>
+              <span className="text-sm font-mono font-bold text-teal-400">{fps} FPS <span className="text-white/40">|</span> {latency}ms</span>
+            </div>
             <div className="flex gap-3 pointer-events-auto">
               <button onClick={toggleFlash} className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg border border-white/10">
                 {flashOn ? <Zap className="h-5 w-5 fill-yellow-400 text-yellow-400" /> : <ZapOff className="h-5 w-5 text-white" />}

@@ -19,6 +19,7 @@ export function ScanCepatUploader() {
   const [imageSrc, setImageSrc] = useState<string | null>(null)
   const [resultData, setResultData] = useState<any>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [latency, setLatency] = useState<number>(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const startAnalysis = async (src: string) => {
@@ -27,6 +28,7 @@ export function ScanCepatUploader() {
     setState('analyzing')
     
     try {
+      const startTime = performance.now()
       const response = await fetch(src)
       const blob = await response.blob()
       
@@ -47,6 +49,9 @@ export function ScanCepatUploader() {
       }
       
       const apiResponse = await res.json()
+      const endTime = performance.now()
+      setLatency(Math.round(endTime - startTime))
+      
       console.log('Classification Result:', apiResponse)
       
       if (apiResponse.success && apiResponse.prediction) {
@@ -205,6 +210,15 @@ export function ScanCepatUploader() {
                     className="h-full rounded-full bg-teal"
                     style={{ width: `${resultData.confidence}%` }}
                   />
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-foreground">Waktu Inferensi (MobileNetV3)</span>
+                  <span className="font-semibold font-mono text-teal">
+                    {latency} ms <span className="text-muted-foreground font-sans text-xs">(~{Math.round(1000/Math.max(1, latency))} FPS)</span>
+                  </span>
                 </div>
               </div>
 

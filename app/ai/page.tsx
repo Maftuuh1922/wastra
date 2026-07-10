@@ -3,12 +3,10 @@ import { Navbar } from '@/components/navbar'
 import { UnifiedAiWorkspace } from '@/components/unified-ai-workspace'
 
 export const metadata: Metadata = {
-  title: 'AI Workspace — Wastra.ai',
+  title: 'AI Testing Ground — Wastra.ai',
   description:
-    'Satu tempat untuk semua kebutuhan identifikasi dan kreasi motif batik Anda dengan teknologi AI terdepan.',
+    'Pusat pengujian dan perbandingan model AI Wastra untuk klasifikasi dan deteksi motif batik.',
 }
-
-import { AiSidebar } from '@/components/ai-sidebar'
 
 export default async function AiPage({
   searchParams,
@@ -16,16 +14,18 @@ export default async function AiPage({
   searchParams: Promise<{ tab?: string }>
 }) {
   const resolvedSearchParams = await searchParams
-  const initialTab = resolvedSearchParams.tab || 'wastra-studio'
+  const initialTab = resolvedSearchParams.tab || 'scan-cepat'
 
   return (
-    <>
-      <main className="flex h-[100dvh] w-full overflow-hidden bg-background">
-        <AiSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
+      {/* Main Workspace Area */}
+      <div className="flex-1 flex flex-col h-full relative w-full">
+        <Navbar />
+        
+        <main className="flex-1 overflow-hidden pt-20 relative z-10 w-full max-w-7xl mx-auto px-4 md:px-8">
           <UnifiedAiWorkspace initialTab={initialTab} />
-        </div>
-      </main>
-    </>
+        </main>
+      </div>
+    </div>
   )
 }

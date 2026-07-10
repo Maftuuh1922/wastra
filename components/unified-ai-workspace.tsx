@@ -1,27 +1,18 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
 import {
   ChevronDown,
-  Palette,
   ScanLine,
   ScanSearch,
-  ArrowLeft,
-  Plus,
-  Mic,
-  Image as ImageIcon,
-  HelpCircle,
   X,
   Info,
   Sparkles,
-  ArrowUp
 } from 'lucide-react'
 import { ScanCepatUploader } from './scan-cepat-uploader'
 import { MultiMotifDetector } from './multi-motif-detector'
-import { WastraStudioGenerator } from './wastra-studio-generator'
 
-type TabId = 'scan-cepat' | 'multi-motif' | 'wastra-studio'
+type TabId = 'scan-cepat' | 'multi-motif'
 
 interface UnifiedAiWorkspaceProps {
   initialTab?: string
@@ -29,71 +20,31 @@ interface UnifiedAiWorkspaceProps {
 
 const models = [
   {
-    id: 'wastra-studio',
-    label: 'Wastra Studio',
-    desc: 'SD + LoRA (Kreasi teks ke gambar)',
-    icon: Palette,
-  },
-  {
     id: 'scan-cepat',
-    label: 'Scan Cepat',
-    desc: 'MobileNetV3 (Klasifikasi instan)',
+    label: 'MobileNetV3 (Klasifikasi)',
+    desc: 'Super Cepat, Akurasi Tinggi (1 Motif)',
     icon: ScanLine,
   },
   {
     id: 'multi-motif',
-    label: 'Multi-Motif',
-    desc: 'YOLOv8 (Deteksi banyak motif)',
+    label: 'YOLOv8 (Deteksi)',
+    desc: 'Lacak & Kotakkan Banyak Motif Sekaligus',
     icon: ScanSearch,
   },
 ] as const
 
 export function UnifiedAiWorkspace({
-  initialTab = 'wastra-studio',
+  initialTab = 'scan-cepat',
 }: UnifiedAiWorkspaceProps) {
-  const defaultTab: TabId = (['scan-cepat', 'multi-motif', 'wastra-studio'].includes(
+  const defaultTab: TabId = (['scan-cepat', 'multi-motif'].includes(
     initialTab
   )
     ? initialTab
-    : 'wastra-studio') as TabId
+    : 'scan-cepat') as TabId
 
   const [activeModel, setActiveModel] = useState<TabId>(defaultTab)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   
-  // Wastra Studio specific state hosted here to connect the unified input bar
-  const [prompt, setPrompt] = useState('')
-  const [submittedPrompt, setSubmittedPrompt] = useState('')
-  const [studioTrigger, setStudioTrigger] = useState(0)
-  const [profanityError, setProfanityError] = useState(false)
-
-  const FORBIDDEN_WORDS = ['nude', 'naked', 'nsfw', 'blood', 'sexy', 'porn', 'gore']
-  
-  const handleGenerate = () => {
-    if (!prompt.trim()) return
-    
-    // Profanity Filter Check
-    const lowerPrompt = prompt.toLowerCase()
-    const hasProfanity = FORBIDDEN_WORDS.some(word => lowerPrompt.includes(word))
-    
-    if (hasProfanity) {
-      setProfanityError(true)
-      setTimeout(() => setProfanityError(false), 3000)
-      return
-    }
-
-    setSubmittedPrompt(prompt)
-    setStudioTrigger((prev) => prev + 1)
-    setPrompt('') // Clear prompt after send
-  }
-
-  const handleMagicPrompt = () => {
-    const magicText = prompt.trim() ? prompt + ', masterpiece, best quality, ultra-detailed, intricate batik pattern, traditional indonesian motif, 8k resolution' : 'beautiful batik pattern, masterpiece, best quality, ultra-detailed, intricate batik pattern, traditional indonesian motif, 8k resolution'
-    
-    setSubmittedPrompt(magicText)
-    setStudioTrigger((prev) => prev + 1)
-    setPrompt('')
-  }
-
   // UI states for info and popups
   const [showPopup, setShowPopup] = useState(true)
   const [showInfo, setShowInfo] = useState(false)
@@ -126,18 +77,16 @@ export function UnifiedAiWorkspace({
           <div className="flex items-start gap-3">
             <Info className="mt-0.5 h-5 w-5 text-gold shrink-0" />
             <div className="flex flex-col gap-1">
-              <h4 className="text-sm font-bold text-foreground">Sekilas Tentang Model AI Wastra</h4>
+              <h4 className="text-sm font-bold text-foreground">Sekilas Tentang Pengujian AI</h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                • <strong>MobileNetV3:</strong> Klasifikasi 1 motif super cepat.<br />
-                • <strong>YOLOv8:</strong> Deteksi banyak motif sekaligus.<br />
-                • <strong>SD+LoRA:</strong> Kreasi gambar dari teks deskripsi.
+                • <strong>MobileNetV3:</strong> Klasifikasi gambar utuh.<br />
+                • <strong>YOLOv8:</strong> Deteksi kotak objek (Bounding Box).<br />
+                Bandingkan kecepatan dan akurasinya!
               </p>
             </div>
           </div>
         </div>
       )}
-
-
 
       {/* Main Content Area */}
       <div className={`flex w-full flex-1 flex-col items-center justify-start no-scrollbar ${
@@ -145,24 +94,20 @@ export function UnifiedAiWorkspace({
           ? 'max-w-none p-0 relative overflow-hidden' 
           : 'max-w-4xl overflow-y-auto px-5 pb-6 pt-10'
       }`}>
-        {/* Central Greeting (Visible mostly when idle or generating) */}
+        {/* Central Greeting (Visible mostly when idle) */}
         <h1 className={`relative z-40 text-center font-serif text-2xl md:text-3xl font-bold lg:text-5xl pointer-events-none transition-all duration-500 ${
           activeModel === 'multi-motif' 
             ? 'hidden' 
             : 'mb-4 md:mb-10 text-foreground'
         }`}>
-          {activeModel === 'wastra-studio'
-            ? 'Ada ide motif batik baru untuk dieksplorasi?'
-            : activeModel === 'multi-motif'
-            ? 'Deteksi banyak motif sekaligus (YOLO)'
-            : 'Pindai dan kenali motif batik Anda'}
+          {activeModel === 'multi-motif'
+            ? 'Deteksi banyak motif sekaligus (YOLOv8)'
+            : 'Klasifikasi gambar penuh (MobileNetV3)'}
         </h1>
 
         {activeModel !== 'multi-motif' && (
           <p className="text-center text-sm md:text-base text-muted-foreground max-w-xl mx-auto -mt-1 mb-6 md:mb-10 animate-in fade-in slide-in-from-bottom-2">
-            {activeModel === 'wastra-studio' 
-              ? 'Model cerdas (SD + LoRA) ini memungkinkan Anda mengkreasi pola dan gambar batik baru yang unik berdasarkan imajinasi teks Anda.'
-              : 'Model ringan (MobileNetV3) ini dapat mengenali 38 jenis motif batik dominan dari foto kain Anda hanya dalam hitungan detik.'}
+            Model ringan klasifikasi (MobileNetV3) ini dapat mengenali jenis motif batik dominan dari foto kain Anda dengan cepat.
           </p>
         )}
 
@@ -172,12 +117,6 @@ export function UnifiedAiWorkspace({
         }`}>
           {activeModel === 'scan-cepat' && <ScanCepatUploader />}
           {activeModel === 'multi-motif' && <MultiMotifDetector onFallback={() => setActiveModel('scan-cepat')} />}
-          {activeModel === 'wastra-studio' && (
-            <WastraStudioGenerator
-              externalPrompt={submittedPrompt}
-              trigger={studioTrigger}
-            />
-          )}
         </div>
       </div>
 
@@ -185,65 +124,21 @@ export function UnifiedAiWorkspace({
       <div className={`w-full max-w-3xl px-5 mx-auto flex flex-col items-center justify-center transition-all duration-500 ${
         activeModel === 'multi-motif' ? 'absolute bottom-24 z-40' : 'mt-auto'
       }`}>
-        <div className={`relative flex items-center rounded-full border border-border p-1.5 md:p-2 shadow-sm focus-within:ring-2 focus-within:ring-gold transition-all duration-500 ease-out ${
-          activeModel === 'wastra-studio' ? 'w-full bg-card' : 'w-fit shadow-md bg-card/90 backdrop-blur-md'
-        }`}>
+        <div className={`relative flex items-center rounded-full border border-border p-1.5 md:p-2 shadow-sm focus-within:ring-2 focus-within:ring-gold transition-all duration-500 ease-out w-fit shadow-md bg-card/90 backdrop-blur-md`}>
           
-          {activeModel === 'wastra-studio' && (
-            <button 
-              onClick={handleMagicPrompt}
-              title="Magic Prompt"
-              className="flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-gold/10 hover:text-gold transition-colors"
-            >
-              <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
-            </button>
-          )}
-
-          {activeModel === 'wastra-studio' ? (
-              <div className="mx-2 md:mx-3 flex-1 min-w-0 relative">
-                <input
-                  type="text"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleGenerate()
-                  }}
-                  placeholder="Ketik imajinasi batik Anda di sini..."
-                  className={`w-full bg-transparent py-2 md:py-3 text-sm md:text-base text-foreground placeholder:text-muted-foreground focus:outline-none ${profanityError ? 'text-red-500' : ''}`}
-                />
-                {profanityError && (
-                  <span className="absolute -top-10 left-0 bg-red-500 text-white text-[10px] px-2 py-1 rounded shadow animate-in fade-in slide-in-from-bottom-2">
-                    Kata tidak pantas terdeteksi!
-                  </span>
-                )}
-              </div>
-          ) : null}
-
           {/* Model Switcher Dropdown */}
           <div className="relative shrink-0" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className={`flex items-center rounded-full bg-background font-semibold text-foreground hover:bg-secondary transition-all ${
-                activeModel === 'wastra-studio' 
-                  ? 'gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm' 
-                  : 'gap-2.5 px-5 py-2 text-sm md:text-base'
-              }`}
+              className="flex items-center rounded-full bg-background font-semibold text-foreground hover:bg-secondary transition-all gap-2.5 px-5 py-2 text-sm md:text-base"
             >
               <selectedModelDef.icon className="h-4 w-4 text-gold shrink-0" />
-              
-              {/* Desktop always shows full label */}
-              <span className="hidden sm:inline whitespace-nowrap">{selectedModelDef.label}</span>
-              
-              {/* Mobile shows "Model" if in studio mode (to save space), else shows full label */}
-              <span className="inline sm:hidden whitespace-nowrap">
-                {activeModel === 'wastra-studio' ? 'Model' : selectedModelDef.label}
-              </span>
-
+              <span className="inline whitespace-nowrap">{selectedModelDef.label}</span>
               <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
             </button>
 
             {dropdownOpen && (
-              <div className="absolute bottom-full right-0 mb-3 w-64 overflow-hidden rounded-2xl border border-border bg-card p-1 shadow-lg shadow-foreground/10 animate-in fade-in slide-in-from-bottom-2">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-72 overflow-hidden rounded-2xl border border-border bg-card p-1 shadow-lg shadow-foreground/10 animate-in fade-in slide-in-from-bottom-2">
                 {models.map((model) => (
                   <button
                     key={model.id}
@@ -275,16 +170,6 @@ export function UnifiedAiWorkspace({
               </div>
             )}
           </div>
-
-          {/* Send Button di Ujung Kanan (menggantikan Mic) */}
-          {activeModel === 'wastra-studio' && prompt.trim().length > 0 && (
-            <button 
-              onClick={handleGenerate}
-              className="ml-1 md:ml-2 flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all shadow-md animate-in zoom-in-90"
-            >
-              <ArrowUp className="h-4 w-4 md:h-5 md:w-5" />
-            </button>
-          )}
         </div>
         
         {/* Gemini AI Disclaimer Text and Info Modal */}
@@ -292,7 +177,7 @@ export function UnifiedAiWorkspace({
           activeModel === 'multi-motif' ? 'absolute bottom-6 w-full px-5' : 'mt-4'
         }`}>
           <p className={`text-[11px] ${activeModel === 'multi-motif' ? 'text-white/70 mix-blend-difference' : 'text-muted-foreground'}`}>
-            Wastra.ai dapat membuat kesalahan dalam mengenali motif. Harap periksa kembali informasinya.
+            Perbandingan Kinerja AI (Skripsi). Harap periksa kembali informasi FPS di pojok layar.
           </p>
           
           <button
@@ -326,84 +211,17 @@ export function UnifiedAiWorkspace({
             
             <div className="flex flex-col gap-5 text-xs text-muted-foreground leading-relaxed max-h-[50vh] md:max-h-[65vh] overflow-y-auto pr-3 no-scrollbar">
               <div className="rounded-xl bg-secondary/30 p-5 border border-border/50 shadow-sm">
-                <strong className="text-foreground text-base block mb-2">1. Scan Cepat (MobileNetV3)</strong>
+                <strong className="text-foreground text-base block mb-2">1. Klasifikasi (MobileNetV3)</strong>
                 <p className="mb-5 text-justify">
-                  MobileNetV3 dirancang khusus untuk pemrosesan citra instan. Model klasifikasi ini bekerja dengan mengidentifikasi satu pola motif paling dominan dalam sebuah gambar. Sangat ideal digunakan untuk memindai satu lembar kain batik utuh secara cepat, memberikan hasil (nama motif dan asal) nyaris tanpa waktu tunggu (<em>real-time</em>) dengan tingkat akurasi yang sangat tinggi.
+                  MobileNetV3 dirancang khusus untuk pemrosesan citra instan. Model klasifikasi ini bekerja dengan mengidentifikasi pola motif dominan secara utuh. Sangat ringan dan menghasilkan akurasi hingga 96.5% dalam hitungan milidetik.
                 </p>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                      <span>Kecepatan Pemrosesan</span>
-                      <span className="text-foreground">92 FPS (~10.8 ms)</span>
-                    </div>
-                    <div className="h-2 w-full bg-background rounded-full overflow-hidden shadow-inner">
-                      <div className="h-full bg-teal w-[92%] rounded-full" />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                      <span>Tingkat Kepastian (Confidence)</span>
-                      <span className="text-foreground">94.8%</span>
-                    </div>
-                    <div className="h-2 w-full bg-background rounded-full overflow-hidden shadow-inner">
-                      <div className="h-full bg-gold w-[95%] rounded-full" />
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div className="rounded-xl bg-secondary/30 p-5 border border-border/50 shadow-sm">
-                <strong className="text-foreground text-base block mb-2">2. Multi-Motif (YOLOv8)</strong>
+                <strong className="text-foreground text-base block mb-2">2. Deteksi Objek (YOLOv8)</strong>
                 <p className="mb-5 text-justify">
-                  YOLO (<em>You Only Look Once</em>) versi 8 adalah model deteksi objek mutakhir yang memindai gambar layaknya radar. AI ini tidak sekadar menebak gambar, melainkan melacak lokasi spasial untuk mengotak-ngotakkan (<em>bounding box</em>) puluhan motif berbeda secara bersamaan dalam satu lensa. Sangat cocok mendeteksi orang-orang yang sedang memakai baju batik berbeda di tengah keramaian.
+                  YOLO (<em>You Only Look Once</em>) versi 8 adalah model deteksi objek mutakhir yang memindai gambar dan mengotak-ngotakkan (<em>bounding box</em>) lokasi persis dari motif. Membutuhkan komputasi lebih tinggi, namun sangat bermanfaat jika ada lebih dari 1 motif di dalam gambar.
                 </p>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                      <span>Kecepatan Deteksi Kamera</span>
-                      <span className="text-foreground">90.8 FPS (~11 ms)</span>
-                    </div>
-                    <div className="h-2 w-full bg-background rounded-full overflow-hidden shadow-inner">
-                      <div className="h-full bg-teal w-[91%] rounded-full" />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                      <span>Rata-Rata Kepastian Multi-Objek</span>
-                      <span className="text-foreground">51.8%</span>
-                    </div>
-                    <div className="h-2 w-full bg-background rounded-full overflow-hidden shadow-inner">
-                      <div className="h-full bg-orange-400 w-[52%] rounded-full" />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                      <span>Rasio Kesuksesan Pelacakan</span>
-                      <span className="text-foreground">79.3%</span>
-                    </div>
-                    <div className="h-2 w-full bg-background rounded-full overflow-hidden shadow-inner">
-                      <div className="h-full bg-gold w-[79%] rounded-full" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-secondary/30 p-5 border border-border/50 shadow-sm">
-                <strong className="text-foreground text-base block mb-2">3. Wastra Studio (SD + LoRA)</strong>
-                <p className="mb-5 text-justify">
-                  Wastra Studio adalah model kecerdasan buatan generatif berbasis <em>Stable Diffusion</em> yang tidak mendeteksi, melainkan <strong>menciptakan</strong>. Model ini telah melalui proses penyempurnaan mendalam (<em>fine-tuning</em>) menggunakan teknik <em>Low-Rank Adaptation</em> (LoRA) dengan dataset khusus berisi puluhan motif regional dari Sabang sampai Merauke. Hasilnya, AI mampu menerjemahkan imajinasi teks Anda menjadi mahakarya visual batik yang memiliki filosofi dan kedalaman warna ultra-realistis.
-                </p>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                      <span>Kualitas & Kerapian Visual (FID)</span>
-                      <span className="text-foreground">Sangat Tinggi (95%)</span>
-                    </div>
-                    <div className="h-2 w-full bg-background rounded-full overflow-hidden shadow-inner">
-                      <div className="h-full bg-gold w-[95%] rounded-full" />
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
